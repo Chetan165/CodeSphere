@@ -8,6 +8,15 @@ import pollJudge0 from './PollingSubmissions';
 
 
 const SolvePage = () => {
+  const b64decode=(binaryString)=>{
+    const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+    return bytes
+  }
+  const [msg,setMsg]=useState(null)
   const constid=useParams().ContestId
   const id=useParams().id;
   const [showResult,setShowResult]=useState(false)
@@ -79,7 +88,6 @@ const SolvePage = () => {
             else if (max_id === 4) verdict = "Wrong Answer";
             else if (max_id === 5) verdict = "Time Limit Exceeded";
     
-            setloading(false);
             SetsubmissionResult({ result: results, verdict, score });
             try{
               const res=await fetch('http://localhost:3000/api/UpdateSubmission',{
@@ -115,7 +123,19 @@ const SolvePage = () => {
     }catch(err){
         toast.error(err.message)
     }
+    
   }
+    useEffect(()=>{
+    submissionResult.verdict==="Error" ? submissionResult.result.map(e=>{
+                if(e.status.id>=6){
+                    let out=b64decode(e.compile_output)
+                    const decodedOutput = new TextDecoder().decode(out)
+                    setMsg(decodedOutput)
+                }
+              }) : setMsg(null)
+              console.log(msg)
+              setloading(false)
+  },[submissionResult,msg])
     return (
     <>
      <h1 className='text-3xl capitalize font-bold m-2'>{ChallengeDetails.title}</h1>
@@ -159,7 +179,9 @@ const SolvePage = () => {
             <p><strong>Overall Verdict:</strong> <span className={`${submissionResult.verdict=='Accepted' ? 'text-green-600': 'text-red-600'} text-xl font-semibold`}>{submissionResult.verdict}</span></p>
             <p><strong>Score:</strong> {submissionResult.score}</p>
           </div>
-
+          <div className='flex flex-wrap justify-center items-center'>
+            <textarea className='w-full focus:outline-none h-40' placeholder='Code Executed with no Errors'>{msg}</textarea>
+            </div>
           <table className="w-full text-left mt-4 border-collapse">
             <thead>
               <tr>
