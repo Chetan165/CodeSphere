@@ -29,7 +29,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-white px-4">
       <header className="text-center mb-10">
-        <h1 className="text-5xl font-bold text-indigo-600">Coding Platform</h1>
+        <h1 className="text-5xl font-bold text-indigo-600">CodingSphere</h1>
         <p className="text-gray-600 mt-3 text-lg">
           DSA Contests. Live Leaderboards. College-level Coding.
         </p>
