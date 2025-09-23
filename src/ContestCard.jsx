@@ -13,10 +13,13 @@ const ContestCard = ({ contest,admin,contests,SetContests}) => {
   const enterContest=async ()=>{
     try{
       const allowed=await fetch(`http://localhost:3000/api/contests/getTime/${id}`,{
-        method:'GET',
+        method:'POST',
         headers:{
           'Content-Type':'application/json'
         },
+        body:JSON.stringify({
+          startTime
+        }),
         credentials:'include'
       })
       const content= await allowed.json();
