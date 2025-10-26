@@ -41,7 +41,7 @@ const ContestCard = ({ contest,admin,contests,SetContests}) => {
         },
         credentials:'include'
       })
-      return res.json().ok
+      return res.json()
     }catch(err)
     {
       console.log(err)
@@ -50,10 +50,16 @@ const ContestCard = ({ contest,admin,contests,SetContests}) => {
   }
   const handleDelete = async () => {
     const isDeleted = await DeleteContest();
-    console.log(isDeleted)
+    if(isDeleted.ok){
       // Filter out the deleted contest from the list
       SetContests((prevContests) => prevContests.filter((e) => e.id !== id));
       console.log(contests)
+    }
+    else{
+      if(isDeleted.msg){
+        toast.error(isDeleted.msg)
+      }
+    }
 
   };
 
