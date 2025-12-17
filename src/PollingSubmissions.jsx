@@ -7,7 +7,7 @@ const pollJudge0 = async (tokens) => {
 
   while (attempts < maxAttempts) {
     const res = await fetch(
-      `http://3.110.96.204:2358/submissions/batch?tokens=${tokenString}&base64_encoded=true&fields=time,memory,stderr,compile_output,message,status`
+      `http://13.234.14.231:2358/submissions/batch?tokens=${tokenString}&base64_encoded=true&fields=time,memory,stderr,compile_output,message,status`
     );
     const data = await res.json();
 
