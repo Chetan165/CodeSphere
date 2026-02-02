@@ -47,7 +47,7 @@ const SolvePage = () => {
       constraints: "",
       inputFormat: "",
       outputFormat: "",
-    }
+    },
   );
 
   const languageOptions = [
@@ -141,14 +141,14 @@ const SolvePage = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-slate-100 font-sans text-slate-900">
+    <div className="flex flex-col h-screen bg-black font-sans text-slate-900">
       {/* 1. Modern Header */}
-      <header className="h-16 flex items-center justify-between px-6 bg-white/80 backdrop-blur-md border-b border-slate-200 z-10">
+      <header className="h-16 flex items-center justify-between px-6 bg-zinc-800 backdrop-blur-md border-b border-slate-200 z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <Terminal className="w-5 h-5 text-indigo-600" />
+          <div className="p-2 bg-gradient-to-r from-blue-300 to-pink-300 rounded-lg">
+            <Terminal className="w-5 h-5 text-black" />
           </div>
-          <h1 className="text-lg font-bold text-slate-800 tracking-tight truncate max-w-md">
+          <h1 className="text-lg font-bold text-white tracking-tight truncate max-w-md">
             {ChallengeDetails.title}
           </h1>
         </div>

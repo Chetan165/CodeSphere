@@ -43,7 +43,7 @@ const ContestChallenges = () => {
     });
   }, [Challenges]);
   return User && User.uid ? (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-100 to-white px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black">
       <ul>
         {Challenges.map((val, index) => {
           return (
