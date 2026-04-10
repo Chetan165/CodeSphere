@@ -7,6 +7,34 @@ import { IconCross, IconX } from "@tabler/icons-react";
 import AILoader from "../component/elements/AILoader";
 import { HoverEffect } from "../component/ui/card-hover-effect";
 import { CodeBlock } from "../component/ui/code-block";
+import { MultiStepLoader } from "./MultiStepLoader";
+
+const loadingStates = [
+  {
+    text: "Connecting to Code Execution Engine...",
+  },
+  {
+    text: "Waiting for Workers",
+  },
+  {
+    text: "Firing Docker Containers",
+  },
+  {
+    text: "Generating Testcases",
+  },
+  {
+    text: "Creating Problem Statement MD File",
+  },
+  {
+    text: "Creating Zip Archive",
+  },
+  {
+    text: "Cleaning Up Resources",
+  },
+  {
+    text: "Almost Done...",
+  },
+];
 
 const steps = [
   {
@@ -74,9 +102,6 @@ const AutoCraft = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             jobid: localStorage.getItem("UserSession"),
-            inputCode: Step2Data.inputGenCode,
-            outputCode: Step2Data.outputGenCode,
-            MetaData: Step1Data,
           }),
         },
       );
@@ -84,12 +109,11 @@ const AutoCraft = () => {
       setTimeout(() => {
         setDone(true);
         setButtonLoading(false);
-      }, 6000);
+        setloading(false);
+      }, 8500);
       console.log(res2);
     } catch (err) {
       console.log(err);
-    } finally {
-      setloading(false);
     }
   };
   const SendData = async () => {
@@ -129,6 +153,8 @@ const AutoCraft = () => {
             sessionId: localStorage.getItem("UserSession"),
             numTestcases: numTestcases,
             testcaseTypes: testcaseTypes,
+            tags: selectedTags,
+            expectedComplexity: complexity,
           }),
         },
       );
@@ -165,6 +191,15 @@ const AutoCraft = () => {
   return (
     <div className="min-h-screen w-full bg-black text-white flex flex-col px-2 md:px-8 py-0">
       {/* Timeline/Stepper */}
+      {currentStep === 2 ? (
+        <MultiStepLoader
+          States={loadingStates}
+          loading={loading}
+          setLoading={setloading}
+        />
+      ) : (
+        <div></div>
+      )}
       <div className="w-full max-w-6xl mx-auto mt-10 mb-10 animate-fade-in">
         <NeonStepTimeline
           steps={steps}
@@ -416,7 +451,7 @@ const AutoCraft = () => {
                     {
                       title: "Problem Statement Preview",
                       description:
-                        Step1Data?.genaiResponse.problemStatement?.replace(
+                        Step1Data?.genaiResponse?.problemStatement?.replace(
                           /\n/g,
                           "<br/>",
                         ) || "AI-generated problem statement will appear here.",

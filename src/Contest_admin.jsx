@@ -137,7 +137,7 @@ export default function ContestCreationForm() {
                 value={form.startTime}
                 onChange={handleChange}
                 required
-                className="rounded-lg bg-black text-white border border-white/20 p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 hover:border-pink-400 hover:shadow-[0_0_10px_0_rgba(236,72,153,0.7),0_0_20px_0_rgba(139,92,246,0.5)] focus:border-blue-400 focus:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(236,72,153,0.5)]"
+                className="rounded-lg bg-zinc-800 text-white border border-white/20 p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 hover:border-pink-400 hover:shadow-[0_0_10px_0_rgba(236,72,153,0.7),0_0_20px_0_rgba(139,92,246,0.5)] focus:border-blue-400 focus:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(236,72,153,0.5)]"
               />
             </LabelInputContainer>
             <LabelInputContainer className="w-fit">
@@ -149,7 +149,7 @@ export default function ContestCreationForm() {
                 value={form.endTime}
                 onChange={handleChange}
                 required
-                className="rounded-lg bg-black text-white border border-white/20 p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 hover:border-blue-400 hover:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(59,130,246,0.5)] focus:border-blue-400 focus:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(59,130,246,0.5)]"
+                className="rounded-lg bg-zinc-800 text-white border border-white/20 p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 hover:border-blue-400 hover:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(59,130,246,0.5)] focus:border-blue-400 focus:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(59,130,246,0.5)]"
               />
             </LabelInputContainer>
           </div>

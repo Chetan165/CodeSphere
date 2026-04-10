@@ -50,7 +50,7 @@ export default function App() {
           </NoiseBackground>
         </div>
         <footer className="mt-16 text-sm text-gray-400 text-center">
-          By-Chetan Sharma
+          {/* By-Chetan Sharma */}
         </footer>
       </div>
     </WavyBackground>

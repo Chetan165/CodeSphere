@@ -10,7 +10,7 @@ import {
 import { motion } from "motion/react";
 import { cn } from "../utils/cn";
 import UserAuth from "../UserAuth.jsx";
-import { Code, File, FileQuestion } from "lucide-react";
+import { Code, File, FileQuestion, UserIcon } from "lucide-react";
 
 export function SidebarDemo({ children }) {
   const [User, setUser] = useState();
@@ -89,11 +89,21 @@ export function SidebarDemo({ children }) {
           <div>
             <SidebarLink
               link={{
-                label: "Manu Arora",
-                href: "#",
+                label: User ? User.displayName : "Loading...",
+                href: "/Dashboard",
                 icon: (
                   <img
-                    src="https://assets.aceternity.com/manu.png"
+                    src={
+                      User ? (
+                        User.photos.length > 0 ? (
+                          User.photos[User.photos.length - 1].value
+                        ) : (
+                          <UserIcon />
+                        )
+                      ) : (
+                        <UserIcon />
+                      )
+                    }
                     className="h-7 w-7 shrink-0 rounded-full"
                     width={50}
                     height={50}

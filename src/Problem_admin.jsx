@@ -5,12 +5,14 @@ import { FileUpload } from "./component/ui/file-upload";
 import { Button } from "./component/ui/stateful-button";
 import { FlipWords } from "./component/ui/flip-words";
 import { IconSparkles } from "@tabler/icons-react";
+import UserAuth from "./UserAuth";
 
 export default function ProblemCreationForm() {
   const navigate = useNavigate();
   const words = ["Problem", "Challenge", "Question"];
   const [zip, SetZip] = useState(null);
   const [problemId, SetProblemId] = useState(null);
+  const [User, setUser] = useState();
   const handleUpload = async () => {
     if (!problemId) {
       toast.error(
@@ -39,27 +41,9 @@ export default function ProblemCreationForm() {
       console.log(err);
     }
   };
-  const fetchUser = async () => {
-    try {
-      const response = await fetch("http://localhost:3000/api/user", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
-      const user = await response.json();
-      if (user && user.uid && user.admin) {
-        console.log(user.admin, user.uid);
-      } else {
-        window.location.href = "/";
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
+
   useEffect(() => {
-    fetchUser();
+    UserAuth(setUser);
   }, []);
   const [form, setForm] = useState({
     title: "",
@@ -80,6 +64,7 @@ export default function ProblemCreationForm() {
     const res = await fetch("http://localhost:3000/admin/contest/problem", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(form),
     });
 
@@ -132,26 +117,29 @@ export default function ProblemCreationForm() {
               className="rounded-lg bg-black text-white border border-white/20 p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 hover:border-blue-400 hover:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(59,130,246,0.5)] focus:border-blue-400 focus:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(59,130,246,0.5)] "
             />
 
-            <input
+            <textarea
               name="inputFormat"
               placeholder="Input Format"
               onChange={handleChange}
               required
+              rows={4}
               className="rounded-lg bg-black text-white border border-white/20 p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 hover:border-pink-400 hover:shadow-[0_0_10px_0_rgba(236,72,153,0.7),0_0_20px_0_rgba(139,92,246,0.5)] focus:border-blue-400 focus:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(236,72,153,0.5)]"
             />
 
-            <input
+            <textarea
               name="outputFormat"
               placeholder="Output Format"
               onChange={handleChange}
+              rows={4}
               required
               className="rounded-lg bg-black text-white border border-white/20 p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 hover:border-blue-400 hover:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(59,130,246,0.5)] focus:border-blue-400 focus:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(59,130,246,0.5)] "
             />
 
-            <input
+            <textarea
               name="constraints"
               placeholder="Constraints"
               onChange={handleChange}
+              rows={4}
               required
               className="rounded-lg bg-black text-white border border-white/20 p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-gray-400 hover:border-pink-400 hover:shadow-[0_0_10px_0_rgba(236,72,153,0.7),0_0_20px_0_rgba(139,92,246,0.5)] focus:border-blue-400 focus:shadow-[0_0_10px_0_rgba(59,130,246,0.7),0_0_20px_0_rgba(236,72,153,0.5)] "
             />
