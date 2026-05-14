@@ -1,29 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
 export default function Register() {
   const navigate = useNavigate();
   const [uid, setUid] = useState("");
-  const [user, setUser] = useState();
-  const isloggdin = async () => {
-    try {
-      const search = await fetch("http://localhost:3000/api/user", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Important to send cookies
-      });
-      const res = await search.json();
-      if (res && res.uid) {
-        setUser(res);
-        toast.error("You are already Registerd");
-        setTimeout(() => navigate("/Dashboard"), 1000);
-      }
-    } catch (err) {
-      console.error("Error checking login status:", err);
-    }
-  };
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     branch: "COMP",
@@ -31,7 +14,6 @@ export default function Register() {
     roll: "",
     yearStart: "23",
   });
-
   const branches = [
     "COMP",
     "IT",
@@ -46,50 +28,112 @@ export default function Register() {
     "M&ME",
   ];
   const sections = ["A", "B", "C", "NA"];
-  const years = ["21", "22", "23", "24", "25"]; // Extend as needed
+  const years = ["21", "22", "23", "24", "25"];
 
   useEffect(() => {
     const { yearStart, branch, section, roll } = formData;
-    const gradYear = (parseInt(yearStart) + 4).toString().slice(-2);
+    const gradYear = (parseInt(yearStart, 10) + 4).toString().slice(-2);
     const sec = section !== "NA" ? section : "";
-    const uidStr = `${yearStart}-${branch}${sec}${
-      roll ? roll : ""
-    }-${gradYear}`;
+    const uidStr = `${yearStart}-${branch}${sec}${roll || ""}-${gradYear}`;
     setUid(uidStr);
   }, [formData]);
+
+  const checkUserState = useCallback(async () => {
+    try {
+      const response = await fetch(`${backendURL}/api/user`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+      const body = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        if (body.loggedIn === false) {
+          toast.error("Please login first");
+          setTimeout(() => navigate("/"), 800);
+          return;
+        }
+
+        if (body.registered === true && body.sessionValid === false) {
+          toast.error("Session active elsewhere. Login again.");
+          setTimeout(() => navigate("/"), 1000);
+          return;
+        }
+
+        if (body.registered === false) {
+          return;
+        }
+
+        toast.error(body.error || "Authentication failed");
+        return;
+      }
+
+      if (body && body.uid) {
+        toast.error("You are already registered");
+        setTimeout(() => navigate("/Dashboard"), 800);
+        return;
+      }
+    } catch (err) {
+      console.error("Error checking auth state:", err);
+      toast.error("Unable to verify login. Try again.");
+    } finally {
+      setCheckingAuth(false);
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    checkUserState();
+  }, [checkUserState]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  useEffect(() => {
-    isloggdin();
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const payload = { ...formData, uid };
+
     try {
-      const search = await fetch("http://localhost:3000/api/register", {
+      const response = await fetch(`${backendURL}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(payload),
-        credentials: "include", // Important to send cookies
       });
-      const res = await search.json();
-      if (res.ok) {
-        window.location.href = "/Dashboard";
-      } else {
-        toast.error(
-          "User with this info already exists(if already registered, please use the same email)"
-        );
-        console.error("Registration failed");
+
+      const body = await response.json().catch(() => ({}));
+      console.log(body);
+      if (!body.ok) {
+        throw new Error(body.msg || "Registration failed");
       }
+      if (response.ok && body.ok) {
+        navigate("/Dashboard");
+        return;
+      }
+
+      if (body.loggedIn === false) {
+        toast.error("Please login first");
+        setTimeout(() => navigate("/"), 800);
+        return;
+      }
+
+      toast.error(body.error || "Registration failed");
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Register error:", err);
+      toast.error(err.message || "Registration failed");
     }
   };
-  return !(user && user.uid) ? (
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Checking session...
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-white">
       <form
         onSubmit={handleSubmit}
@@ -98,7 +142,6 @@ export default function Register() {
         <h2 className="text-2xl font-bold text-center text-indigo-700 mb-4">
           User Registration
         </h2>
-
         <input
           type="text"
           name="name"
@@ -172,7 +215,5 @@ export default function Register() {
         </button>
       </form>
     </div>
-  ) : (
-    <div></div>
   );
 }

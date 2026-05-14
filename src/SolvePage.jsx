@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useMemo, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import UserAuth from "./UserAuth";
 import { toast, LoaderIcon } from "react-hot-toast";
 import * as Dialog from "@radix-ui/react-dialog";
 import Editor from "@monaco-editor/react";
-import pollJudge0 from "./PollingSubmissions";
+import { pollJudge0, pollRun } from "./PollingSubmissions";
 import {
   Play,
   CheckCircle,
@@ -12,6 +12,14 @@ import {
   XCircle,
   Terminal,
 } from "lucide-react"; // install lucide-react if needed
+const ReactMarkdown = React.lazy(() => import("react-markdown"));
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeSanitize from "rehype-sanitize";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
+import Buttonv2 from "./component/ui/Buttonv2";
+const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 // Helper for language mapping
 const getLanguageString = (id) => {
@@ -36,19 +44,28 @@ const SolvePage = () => {
   const [languageId, setLanguageId] = useState(54);
   const [submissionResult, SetsubmissionResult] = useState(null);
   const [decodedError, setDecodedError] = useState(null);
+  const [runLoading, setRunLoading] = useState(false);
+  const [runStdin, setRunStdin] = useState("");
+  const [useCustomStdin, setUseCustomStdin] = useState(false);
+  const [runResult, setRunResult] = useState(null);
+  const [runError, setRunError] = useState("");
+  const [contestMeta, setContestMeta] = useState(null);
+  const [serverOffset, setServerOffset] = useState(0);
+  const serverOffsetRef = useRef(serverOffset);
 
-  // Dummy data fallback if localStorage is empty
-  const [ChallengeDetails] = useState(
-    JSON.parse(localStorage.getItem(`${id}`)) || {
-      title: "Problem Title Not Found",
-      statement: "Could not load problem details.",
-      sampleInput: "",
-      sampleOutput: "",
-      constraints: "",
-      inputFormat: "",
-      outputFormat: "",
-    },
-  );
+  useEffect(() => {
+    serverOffsetRef.current = serverOffset;
+  }, [serverOffset]);
+  // Challenge details will be fetched from backend on mount
+  const [ChallengeDetails, setChallengeDetails] = useState({
+    title: "Problem Title Not Found",
+    statement: "Could not load problem details.",
+    sampleInput: "",
+    sampleOutput: "",
+    constraints: "",
+    inputFormat: "",
+    outputFormat: "",
+  });
 
   const languageOptions = [
     { id: 54, name: "C++ (GCC 9.2.0)" },
@@ -60,16 +77,131 @@ const SolvePage = () => {
     UserAuth(setUser);
   }, []);
 
-  // Helper: Decode Base64 from Judge0
-  const b64decode = (str) => {
-    try {
-      return decodeURIComponent(escape(window.atob(str)));
-    } catch (e) {
-      return str;
+  // Sync contest meta and server time (now) for accurate countdown
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchMeta = async () => {
+      if (!constid) return;
+      try {
+        const res = await fetch(`${backendURL}/api/contests/${constid}/meta`, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+          },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.ok && mounted) {
+          setContestMeta(data.contest);
+          const serverNow = Date.parse(
+            data.serverNow || new Date().toISOString(),
+          );
+          const off = serverNow - Date.now();
+          setServerOffset(off);
+        }
+      } catch (e) {
+        console.warn("Failed to fetch contest meta", e);
+      }
+    };
+
+    fetchMeta();
+
+    const onFocus = () => fetchMeta();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [constid]);
+
+  // Small isolated countdown component to avoid parent re-renders on every tick
+  function Countdown({ contestMeta, serverOffsetRef }) {
+    const [nowTs, setNowTs] = useState(
+      Date.now() + (serverOffsetRef.current || 0),
+    );
+    useEffect(() => {
+      const tick = () => setNowTs(Date.now() + (serverOffsetRef.current || 0));
+      const id = setInterval(tick, 1000);
+      return () => clearInterval(id);
+    }, [serverOffsetRef]);
+
+    if (!contestMeta) return null;
+    const start = new Date(contestMeta.startTime).getTime();
+    const end = new Date(contestMeta.endTime).getTime();
+    if (nowTs < start) {
+      return (
+        <div className="text-sm text-gray-200 px-3 py-1 rounded-md bg-zinc-800/40">
+          Starts in: {formatRemaining(start - nowTs)}
+        </div>
+      );
     }
-  };
+    if (nowTs > end) {
+      return (
+        <div className="text-sm text-gray-200 px-3 py-1 rounded-md bg-zinc-800/40">
+          Contest ended
+        </div>
+      );
+    }
+    return (
+      <div className="text-sm text-gray-200 px-3 py-1 rounded-md bg-zinc-800/40">
+        Time left: {formatRemaining(Math.max(0, end - nowTs))}
+      </div>
+    );
+  }
+
+  // Fetch full challenge details when mounting (authoritative)
+  useEffect(() => {
+    let mounted = true;
+    const fetchChallenge = async () => {
+      try {
+        const url = constid
+          ? `${backendURL}/api/challenges/${id}?contestId=${constid}`
+          : `${backendURL}/api/challenges/${id}`;
+        const res = await fetch(url, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            Pragma: "no-cache",
+          },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted && data && data.ok) {
+          setChallengeDetails(data.challenge || {});
+        }
+      } catch (e) {
+        console.warn("Failed to fetch challenge details", e);
+      }
+    };
+    fetchChallenge();
+    return () => {
+      mounted = false;
+    };
+  }, [id, constid]);
 
   const Submit = async () => {
+    // Client-side guard: prevent submission outside contest window
+    if (constid && contestMeta) {
+      const start = new Date(contestMeta.startTime).getTime();
+      const end = new Date(contestMeta.endTime).getTime();
+      const now = Date.now() + serverOffsetRef.current;
+      if (now < start) {
+        toast.error("Contest not started");
+        return;
+      }
+      if (now > end) {
+        toast.error("Contest ended");
+        return;
+      }
+    }
+
     if (!Code || Code.trim() === "") {
       toast.error("Code cannot be empty");
       return;
@@ -88,7 +220,7 @@ const SolvePage = () => {
         uid: User?.uid || "",
       };
 
-      const res = await fetch("http://localhost:3000/api/Submission/submit", {
+      const res = await fetch(`${backendURL}/api/Submission/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Submission: submissionPayload }),
@@ -96,42 +228,108 @@ const SolvePage = () => {
       });
 
       const result = await res.json();
-      if (!result.ok) throw new Error(result.message);
-
-      const results = await pollJudge0(result.tokens);
-
-      let verdict = "Accepted";
-      let score = 0;
-      let max_status_id = 0;
-
-      results.forEach((r) => {
-        if (r.status.id === 3) score += 10;
-        if (r.status.id > max_status_id) max_status_id = r.status.id;
-      });
-
-      if (max_status_id >= 6) verdict = "Compilation Error";
-      else if (max_status_id === 5) verdict = "Time Limit Exceeded";
-      else if (max_status_id === 4) verdict = "Wrong Answer";
-
-      SetsubmissionResult({ result: results, verdict, score });
-
-      if (verdict === "Compilation Error") {
-        const errorRes = results.find((r) => r.status.id >= 6);
-        if (errorRes?.compile_output) {
-          setDecodedError(b64decode(errorRes.compile_output));
-        }
+      if (!res.ok || result?.ok === false) {
+        throw new Error(result?.message || "Submission failed");
       }
 
-      await fetch("http://localhost:3000/api/UpdateSubmission", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...submissionPayload,
-          lang_id: submissionPayload.languageId,
-          verdict,
-          score,
-        }),
+      const submissionId =
+        result?.submissionId || result?.id || result?.SubmissionId;
+      if (!submissionId) {
+        throw new Error("Submission id missing from submit response");
+      }
+
+      const polledResult = await pollJudge0(submissionId);
+      const results = Array.isArray(polledResult?.results)
+        ? polledResult.results
+        : [];
+
+      // prefer backend-computed score and maxScore when available
+      const score = Number.isFinite(polledResult?.score)
+        ? polledResult.score
+        : null;
+      const maxScore = Number.isFinite(polledResult?.maxScore)
+        ? polledResult.maxScore
+        : null;
+
+      let verdict = "Wrong Answer";
+      if (polledResult?.status === "accepted") verdict = "Accepted";
+      else if (polledResult?.firstError?.status)
+        verdict = polledResult.firstError.status;
+
+      SetsubmissionResult({
+        result: results,
+        verdict,
+        score: score !== null ? score : undefined,
+        maxScore: maxScore !== null ? maxScore : undefined,
+        passedNonPublic: polledResult?.passedNonPublic,
+        total: polledResult?.total,
       });
+
+      // Update local challenge details and notify other components
+      try {
+        const deriveScore = () => {
+          if (Number.isFinite(polledResult?.score)) return polledResult.score;
+          const rs = Array.isArray(polledResult?.results)
+            ? polledResult.results
+            : [];
+          const passed = rs.filter(
+            (r) =>
+              r?.pass ||
+              (typeof r?.status === "string" &&
+                r.status.toLowerCase().includes("accept")),
+          ).length;
+          const total = polledResult?.total || rs.length || 0;
+          const max =
+            ChallengeDetails?.maxScore ||
+            (Number.isFinite(polledResult?.maxScore)
+              ? polledResult.maxScore
+              : 100);
+          if (total === 0) return 0;
+          return Math.round((passed / total) * max);
+        };
+
+        const newMax =
+          ChallengeDetails?.maxScore ??
+          (Number.isFinite(polledResult?.maxScore)
+            ? polledResult.maxScore
+            : null) ??
+          100;
+        const newScore = deriveScore();
+        let newStatus = "Unattempted";
+        if (newScore >= newMax) newStatus = "Solved";
+        else if (newScore > 0) newStatus = "Partially Solved";
+
+        const prevScore = ChallengeDetails?.userScore ?? 0;
+        if (newScore > prevScore) {
+          setChallengeDetails((prev) => ({
+            ...prev,
+            userScore: newScore,
+            maxScore: newMax,
+            status: newStatus,
+          }));
+
+          // Notify other components (like ContestChallenges) to update their list
+          try {
+            window.dispatchEvent(
+              new CustomEvent("challengeUpdated", {
+                detail: {
+                  id,
+                  userScore: newScore,
+                  status: newStatus,
+                  maxScore: newMax,
+                },
+              }),
+            );
+          } catch (e) {}
+        }
+      } catch (e) {
+        console.warn("Failed to derive updated score/status", e);
+      }
+
+      const compileOutput =
+        polledResult?.firstError?.compile_output ||
+        results.find((r) => r?.compile_output)?.compile_output;
+      setDecodedError(compileOutput || null);
     } catch (err) {
       toast.error(err.message || "Submission failed");
       setShowResult(false);
@@ -140,23 +338,268 @@ const SolvePage = () => {
     }
   };
 
+  const Run = async () => {
+    // Client-side guard: prevent runs when contest window disallows it
+    if (constid && contestMeta) {
+      const start = new Date(contestMeta.startTime).getTime();
+      const end = new Date(contestMeta.endTime).getTime();
+      const now = Date.now() + serverOffsetRef.current;
+      if (now < start) {
+        toast.error("Contest not started");
+        return;
+      }
+      if (now > end) {
+        toast.error("Contest ended");
+        return;
+      }
+    }
+
+    if (!Code || Code.trim() === "") {
+      toast.error("Code cannot be empty");
+      return;
+    }
+
+    try {
+      setRunLoading(true);
+      setRunError("");
+      setRunResult(null);
+
+      const runPayload = {
+        Code,
+        languageId: parseInt(languageId),
+        stdin: useCustomStdin ? runStdin : ChallengeDetails?.sampleInput || "",
+      };
+      if (!useCustomStdin)
+        runPayload.expected = ChallengeDetails?.sampleOutput || "";
+
+      const res = await fetch(`${backendURL}/api/Submission/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // send expected only for sample runs; omit for custom stdin
+        body: JSON.stringify(runPayload),
+        credentials: "include",
+      });
+
+      const data = await res.json();
+      if (!res.ok || data?.ok === false) {
+        throw new Error(data?.message || "Run failed");
+      }
+
+      const runId = data?.runId;
+      if (!runId) {
+        throw new Error("runId missing from run response");
+      }
+
+      const polled = await pollRun(runId);
+
+      setRunResult(polled);
+    } catch (err) {
+      const message = err?.message || "Run failed";
+      setRunError(message);
+      toast.error(message);
+    } finally {
+      setRunLoading(false);
+    }
+  };
+
+  const normalizeText = (value) =>
+    String(value || "")
+      .replace(/\r\n/g, "\n")
+      // remove trailing spaces/tabs on each line
+      .replace(/[ \t]+$/gm, "")
+      // remove trailing blank lines
+      .replace(/\n+$/g, "")
+      .trim();
+
+  const runVerdict = (() => {
+    if (!runResult) return null;
+    // Prefer backend verdict when available (submitted expected)
+    if (runResult.verdict) {
+      const v = String(runResult.verdict).toLowerCase();
+      if (v.includes("accept")) return "Accepted";
+      if (v.includes("wrong")) return "Wrong Answer";
+      if (v.includes("runtime")) return "Runtime Error";
+      return runResult.verdict;
+    }
+    // If backend provided a message (custom stdin), don't show verdict
+    if (runResult.message) return null;
+    // Fallback: derive from Judge0 status text only if no verdict
+    if (runResult.status) {
+      const s = String(runResult.status).toLowerCase();
+      if (s.includes("accept")) return "Accepted";
+      if (s.includes("wrong")) return "Wrong Answer";
+      if (s.includes("runtime")) return "Runtime Error";
+      return runResult.status;
+    }
+    return null;
+  })();
+
+  const explanation = ChallengeDetails?.explanation || "";
+  const solution = ChallengeDetails?.solution || "";
+
+  const buildCombined = () => {
+    const title = ChallengeDetails?.title || "";
+    const statement = ChallengeDetails?.statement || "";
+    const inputFormat = ChallengeDetails?.inputFormat || "";
+    const outputFormat = ChallengeDetails?.outputFormat || "";
+    const constraints = ChallengeDetails?.constraints || "";
+    const sampleInput = ChallengeDetails?.sampleInput || "";
+    const sampleOutput = ChallengeDetails?.sampleOutput || "";
+
+    return [
+      `# ${title}`,
+      "",
+      statement,
+      "",
+      "---",
+      "## Input Format",
+      inputFormat,
+      "",
+      "## Output Format",
+      outputFormat,
+      "",
+      "---",
+      "## Constraints",
+      constraints,
+      "",
+      "---",
+      "## Example",
+      "Input:",
+      "```",
+      sampleInput,
+      "```",
+      "",
+      "Output:",
+      "```",
+      sampleOutput,
+      "```",
+      "",
+      "---",
+      "## Explanation",
+      "",
+      explanation,
+      "",
+    ].join("\n");
+  };
+
+  // Memoize combined markdown so it's not rebuilt on every render
+  const combinedMarkdown = useMemo(
+    () => buildCombined(),
+    [ChallengeDetails, explanation, solution],
+  );
+
+  // Memoized markdown area to avoid re-renders unless content changes
+  const MarkdownArea = React.memo(
+    function MarkdownArea({ value }) {
+      return (
+        <Suspense
+          fallback={
+            <div className="p-6 text-slate-400">Loading statement...</div>
+          }
+        >
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeSanitize, rehypeKatex]}
+          >
+            {value}
+          </ReactMarkdown>
+        </Suspense>
+      );
+    },
+    (prev, next) => prev.value === next.value,
+  );
+
+  // Defer heavy markdown rendering until the browser is idle to avoid main-thread jank
+  const [showMarkdown, setShowMarkdown] = useState(false);
+  useEffect(() => {
+    let id = null;
+    if (typeof window !== "undefined" && window.requestIdleCallback) {
+      id = window.requestIdleCallback(() => setShowMarkdown(true), {
+        timeout: 500,
+      });
+    } else {
+      id = setTimeout(() => setShowMarkdown(true), 150);
+    }
+    return () => {
+      if (typeof window !== "undefined" && window.cancelIdleCallback && id) {
+        window.cancelIdleCallback(id);
+      } else if (id) clearTimeout(id);
+    };
+  }, []);
+
+  // Derived contest timing (use current time derived from server offset when needed)
+  const now = Date.now() + serverOffsetRef.current;
+  const contestStartMs = contestMeta
+    ? new Date(contestMeta.startTime).getTime()
+    : null;
+  const contestEndMs = contestMeta
+    ? new Date(contestMeta.endTime).getTime()
+    : null;
+  const started = contestMeta ? now >= contestStartMs : false;
+  const ended = contestMeta ? now > contestEndMs : false;
+  const contestBlocked = constid ? !started || ended : false;
+  const remainingMs = contestMeta ? Math.max(0, contestEndMs - now) : 0;
+
+  const formatRemaining = (ms) => {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const days = Math.floor(total / 86400);
+    const hours = Math.floor((total % 86400) / 3600);
+    const mins = Math.floor((total % 3600) / 60);
+    const secs = total % 60;
+    if (days > 0) return `${days}d ${hours}h ${mins}m`;
+    return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
   return (
-    <div className="flex flex-col h-screen bg-black font-sans text-slate-900">
+    <div className="flex flex-col h-screen bg-[#0b0b0d] font-sans text-slate-200">
       {/* 1. Modern Header */}
-      <header className="h-16 flex items-center justify-between px-6 bg-zinc-800 backdrop-blur-md border-b border-slate-200 z-10">
+      <header className="h-16 flex items-center justify-between px-6 bg-zinc-900/60 backdrop-blur-md border-b border-slate-800 z-10">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-r from-blue-300 to-pink-300 rounded-lg">
+          <div className="p-2 bg-white rounded-lg shadow-md">
             <Terminal className="w-5 h-5 text-black" />
           </div>
-          <h1 className="text-lg font-bold text-white tracking-tight truncate max-w-md">
-            {ChallengeDetails.title}
-          </h1>
+          <div className="flex flex-col max-w-md truncate">
+            <h1 className="text-lg font-semibold text-white tracking-tight truncate">
+              {ChallengeDetails.title}
+            </h1>
+            <div className="flex items-center gap-3 mt-1">
+              {ChallengeDetails.status && (
+                <span
+                  className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                    ChallengeDetails.status.toLowerCase().includes("solved")
+                      ? "bg-emerald-800 text-emerald-200"
+                      : ChallengeDetails.status
+                            .toLowerCase()
+                            .includes("partial")
+                        ? "bg-yellow-800 text-yellow-200"
+                        : "bg-rose-800 text-rose-200"
+                  }`}
+                >
+                  {ChallengeDetails.status}
+                </span>
+              )}
+              {typeof ChallengeDetails.userScore !== "undefined" &&
+                ChallengeDetails.userScore !== null && (
+                  <span className="text-xs text-slate-300 font-mono">
+                    {ChallengeDetails.userScore}/
+                    {ChallengeDetails.maxScore ?? "-"}
+                  </span>
+                )}
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Contest status / countdown */}
+          {constid && contestMeta && (
+            <Countdown
+              contestMeta={contestMeta}
+              serverOffsetRef={serverOffsetRef}
+            />
+          )}
           <div className="relative">
             <select
-              className="appearance-none bg-slate-100 border border-slate-300 hover:border-slate-400 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 block w-48 p-2.5 outline-none transition-all cursor-pointer font-medium"
+              className="appearance-none bg-zinc-800 border border-zinc-700 text-slate-200 text-sm rounded-lg block w-56 p-2.5 outline-none transition-all cursor-pointer font-medium"
               value={languageId}
               onChange={(e) => setLanguageId(e.target.value)}
             >
@@ -166,116 +609,50 @@ const SolvePage = () => {
                 </option>
               ))}
             </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-              <svg
-                className="fill-current h-4 w-4"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-              </svg>
-            </div>
           </div>
 
-          <button
-            onClick={Submit}
-            disabled={loading}
-            className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <LoaderIcon className="w-4 h-4 animate-spin" />
-            ) : (
-              <Play className="w-4 h-4 fill-current" />
-            )}
-            Run Code
-          </button>
+          <div className="flex items-center gap-3">
+            <Buttonv2
+              text={runLoading ? "Running..." : "Run"}
+              ApiCall={async () => await Run()}
+              funct={() => {}}
+              loading={runLoading}
+              variant="blue"
+            />
+
+            <Buttonv2
+              text={loading ? "Submitting..." : "Submit"}
+              ApiCall={async () => await Submit()}
+              funct={() => {}}
+              loading={loading}
+              variant="green"
+            />
+          </div>
         </div>
       </header>
 
       {/* 2. Floating Split Layout */}
-      <div className="flex-1 flex gap-4 p-4 overflow-hidden h-[calc(100vh-4rem)]">
+      <div className="flex-1 flex gap-6 p-6 overflow-hidden h-[calc(100vh-4rem)]">
         {/* Left Panel: Problem Statement (Floating Card) */}
-        <div className="w-1/2 flex flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="overflow-y-auto p-8 scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-slate-400">
-            <div className="prose prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-800 prose-p:text-slate-600 prose-p:leading-relaxed">
+        <div className="w-5/12 flex flex-col bg-zinc-900 rounded-2xl shadow-sm border border-zinc-800 overflow-hidden">
+          <div className="overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-zinc-700">
+            <div className="md-prose prose prose-invert max-w-none prose-headings:font-semibold prose-headings:text-slate-100 prose-p:text-slate-300 prose-p:leading-relaxed">
               {/* Statement */}
-              <h2 className="text-xl mb-4">Description</h2>
-              <p className="whitespace-pre-wrap">
-                {ChallengeDetails.statement}
-              </p>
+              <h2 className="text-lg mb-4 text-white">Description</h2>
 
-              {/* Formats */}
-              <div className="mt-8 grid gap-6">
-                <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">
-                    Input Format
-                  </h3>
-                  <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    {ChallengeDetails.inputFormat}
-                  </p>
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">
-                    Output Format
-                  </h3>
-                  <p className="text-sm text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-100">
-                    {ChallengeDetails.outputFormat}
-                  </p>
-                </div>
-              </div>
-
-              {/* Constraints */}
-              <div className="mt-8">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Constraints
-                </h3>
-                <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg">
-                  <code className="text-amber-800 font-mono text-sm">
-                    {ChallengeDetails.constraints}
-                  </code>
-                </div>
-              </div>
-
-              {/* Examples */}
-              <div className="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">
-                    Sample Input
-                  </h3>
-                  <div className="bg-slate-800 rounded-lg p-4 shadow-inner">
-                    <pre className="text-emerald-400 font-mono text-sm overflow-x-auto custom-scrollbar">
-                      {ChallengeDetails.sampleInput}
-                    </pre>
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-slate-400 uppercase mb-2">
-                    Sample Output
-                  </h3>
-                  <div className="bg-slate-800 rounded-lg p-4 shadow-inner">
-                    <pre className="text-emerald-400 font-mono text-sm overflow-x-auto custom-scrollbar">
-                      {ChallengeDetails.sampleOutput}
-                    </pre>
-                  </div>
-                </div>
+              <div className="md-prose">
+                <MarkdownArea value={combinedMarkdown} />
               </div>
             </div>
           </div>
         </div>
 
         {/* Right Panel: Code Editor (Floating Card) */}
-        <div className="w-1/2 flex flex-col rounded-2xl shadow-xl overflow-hidden border border-slate-700 bg-[#1e1e1e]">
+        <div className="w-7/12 flex flex-col rounded-2xl shadow-xl overflow-hidden border border-zinc-800 bg-[#111213]">
           {/* Editor Header */}
-          <div className="h-10 bg-[#252526] flex items-center px-4 border-b border-[#333]">
-            <span className="text-xs text-gray-400 font-mono">
-              main.
-              {getLanguageString(languageId) === "python"
-                ? "py"
-                : getLanguageString(languageId)}
-            </span>
-          </div>
+          {/* removed filename header to let editor blend seamlessly */}
 
-          <div className="flex-1 relative">
+          <div className="flex-1 relative min-h-0">
             <Editor
               height="100%"
               theme="vs-dark"
@@ -296,130 +673,196 @@ const SolvePage = () => {
               }}
             />
           </div>
+
+          {/* Compact run section at the bottom of the IDE panel */}
+          <div className="h-72 border-t border-zinc-800 bg-[#0b0b0d] px-0 py-0 flex flex-col gap-0">
+            <div className="flex items-center justify-between px-3 py-2">
+              <p className="text-[12px] uppercase tracking-wider text-slate-300 font-semibold">
+                Sample Input
+              </p>
+              {runResult && !runLoading && (
+                <div className="flex items-center gap-3">
+                  {!useCustomStdin && runVerdict && (
+                    <span
+                      className={`text-xs font-semibold ${
+                        runVerdict === "Accepted"
+                          ? "text-green-400"
+                          : "text-red-400"
+                      }`}
+                    >
+                      {runVerdict}
+                    </span>
+                  )}
+                  <span className="text-[11px] text-gray-300 font-mono">
+                    {runResult?.time ? `${runResult.time}s` : "0.00s"}
+                    {runResult?.memory ? ` • ${runResult.memory}KB` : ""}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <label className="flex items-center gap-2 text-[12px] text-slate-300 px-3">
+              <input
+                type="checkbox"
+                className="accent-sky-500"
+                checked={useCustomStdin}
+                onChange={(e) => setUseCustomStdin(e.target.checked)}
+              />
+              Use custom stdin
+            </label>
+
+            <textarea
+              className="h-20 w-full resize-none rounded-none border-0 bg-[#050506] px-4 py-3 text-xs text-slate-200 placeholder:text-zinc-500 outline-none focus:border-sky-500 disabled:opacity-60"
+              placeholder={
+                useCustomStdin
+                  ? "Type custom stdin (multiline supported)"
+                  : "Using sample input from problem statement"
+              }
+              value={
+                useCustomStdin ? runStdin : ChallengeDetails?.sampleInput || ""
+              }
+              onChange={(e) => setRunStdin(e.target.value)}
+              disabled={!useCustomStdin}
+            />
+
+            <div className="px-3 py-2">
+              <p className="text-[12px] uppercase tracking-wider text-slate-300 font-semibold">
+                Result
+              </p>
+            </div>
+
+            <div className="flex-1 rounded-none border-0 bg-[#050506] px-4 py-3 overflow-auto">
+              {runLoading ? (
+                <p className="text-xs text-slate-400">Running...</p>
+              ) : runError ? (
+                <pre className="text-xs text-red-300 whitespace-pre-wrap font-mono">
+                  {runError}
+                </pre>
+              ) : (
+                <pre className="text-xs text-slate-200 whitespace-pre-wrap font-mono w-full">
+                  {runResult
+                    ? runResult.compile_output ||
+                      runResult.stderr ||
+                      runResult.stdout ||
+                      "(no output)"
+                    : "Click Run to execute."}
+                </pre>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Result Modal */}
       <Dialog.Root open={showResult} onOpenChange={setShowResult}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 duration-300" />
-          <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[90vw] max-w-3xl bg-white rounded-2xl shadow-2xl p-0 z-50 overflow-hidden outline-none">
-            {/* Modal Header */}
-            <div className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex justify-between items-center">
-              <Dialog.Title className="text-lg font-bold text-slate-800">
-                Execution Results
+          <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] duration-300" />
+          <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[92vw] max-w-3xl bg-zinc-900/90 rounded-2xl shadow-2xl p-0 z-[210] overflow-hidden outline-none border border-white/10 ring-1 ring-white/5">
+            <div className="px-6 py-2 flex items-center gap-3 border-b border-zinc-800">
+              <Dialog.Title className="text-sm font-medium text-slate-100">
+                Result
               </Dialog.Title>
-              <Dialog.Close asChild>
-                <button className="text-slate-400 hover:text-slate-600 transition-colors bg-slate-200 hover:bg-slate-300 rounded-full p-1">
-                  <XCircle className="w-5 h-5" />
-                </button>
-              </Dialog.Close>
+              {submissionResult && (
+                <div
+                  className={`ml-4 text-sm font-semibold ${submissionResult.verdict === "Accepted" ? "text-emerald-400" : "text-rose-400"}`}
+                >
+                  {submissionResult.verdict}
+                  {submissionResult.score !== undefined && (
+                    <span className="text-xs text-slate-400 ml-2">
+                      • {submissionResult.score}/
+                      {submissionResult.maxScore ?? 100}
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="ml-auto">
+                <Dialog.Close asChild>
+                  <button className="text-slate-300 hover:text-white transition-colors bg-transparent rounded p-1">
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </Dialog.Close>
+              </div>
             </div>
 
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-4 max-h-[70vh] overflow-y-auto">
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-16 space-y-4">
                   <div className="relative">
-                    <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-zinc-700 border-t-sky-500 rounded-full animate-spin"></div>
                   </div>
-                  <p className="text-slate-500 font-medium">
+                  <p className="text-slate-300 font-medium">
                     Evaluating your code...
                   </p>
                 </div>
-              ) : (
-                submissionResult && (
-                  <div className="space-y-6">
-                    {/* Verdict Banner */}
-                    <div
-                      className={`p-5 rounded-xl border flex items-center gap-4 ${
-                        submissionResult.verdict === "Accepted"
-                          ? "bg-green-50 border-green-200"
-                          : "bg-red-50 border-red-200"
-                      }`}
+              ) : submissionResult ? (
+                <div className="space-y-4">
+                  <div className="px-3 py-2 rounded-md border border-white/5 bg-zinc-900/70 flex items-center">
+                    <span
+                      className={`text-sm font-medium ${submissionResult.verdict === "Accepted" ? "text-emerald-300" : "text-rose-300"}`}
                     >
-                      <div
-                        className={`p-3 rounded-full ${
-                          submissionResult.verdict === "Accepted"
-                            ? "bg-green-100"
-                            : "bg-red-100"
-                        }`}
-                      >
-                        {submissionResult.verdict === "Accepted" ? (
-                          <CheckCircle className="w-6 h-6 text-green-600" />
-                        ) : (
-                          <AlertTriangle className="w-6 h-6 text-red-600" />
-                        )}
-                      </div>
-                      <div>
-                        <h2
-                          className={`text-xl font-bold ${
-                            submissionResult.verdict === "Accepted"
-                              ? "text-green-800"
-                              : "text-red-800"
-                          }`}
-                        >
-                          {submissionResult.verdict}
-                        </h2>
-                        <p className="text-sm text-slate-600">
-                          You scored{" "}
-                          <span className="font-bold text-slate-900">
-                            {submissionResult.score}/100
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Compilation Error Log */}
-                    {decodedError && (
-                      <div className="rounded-xl border border-red-200 overflow-hidden">
-                        <div className="bg-red-50 px-4 py-2 border-b border-red-100">
-                          <h3 className="text-xs font-bold text-red-800 uppercase tracking-wider">
-                            Compilation Error
-                          </h3>
-                        </div>
-                        <pre className="p-4 bg-red-900/5 text-red-900 font-mono text-xs overflow-x-auto">
-                          {decodedError}
-                        </pre>
-                      </div>
-                    )}
-
-                    {/* Test Cases List */}
-                    {!decodedError && (
-                      <div>
-                        <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">
-                          Test Cases
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {submissionResult.result.map((res, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-300 transition-colors"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-xs font-mono text-slate-400">
-                                  #{i + 1}
-                                </span>
-                                <span
-                                  className={`text-sm font-medium ${
-                                    res.status.id === 3
-                                      ? "text-green-700"
-                                      : "text-red-700"
-                                  }`}
-                                >
-                                  {res.status.description}
-                                </span>
-                              </div>
-                              <div className="text-xs text-slate-400 font-mono flex gap-3">
-                                <span>{res.time || "0.00"}s</span>
-                                <span>{res.memory || "0"}KB</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      {submissionResult.verdict}
+                    </span>
+                    {submissionResult.message && (
+                      <span className="ml-3 text-xs text-slate-400">
+                        {submissionResult.message}
+                      </span>
                     )}
                   </div>
-                )
+
+                  {submissionResult.result &&
+                  submissionResult.result.length > 0 ? (
+                    <div>
+                      <h3 className="text-sm text-slate-300 uppercase tracking-wider mb-2">
+                        Test Cases
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {submissionResult.result.map((res, i) => {
+                          const statusLabel =
+                            typeof res?.status === "string"
+                              ? res.status
+                              : res?.pass
+                                ? "Accepted"
+                                : "Wrong Answer";
+                          const passed = statusLabel
+                            .toLowerCase()
+                            .includes("accepted");
+                          const colorClass = passed
+                            ? "text-emerald-300"
+                            : "text-rose-300";
+                          return (
+                            <div
+                              key={i}
+                              className="p-2 rounded-md border border-zinc-800 bg-zinc-900/60"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs font-mono text-slate-400">
+                                    #{i + 1}
+                                  </span>
+                                  <span
+                                    className={`text-sm font-medium ${colorClass}`}
+                                  >
+                                    {statusLabel}
+                                  </span>
+                                </div>
+                                <div className="text-xs text-slate-400 font-mono text-right">
+                                  <div>{res.time || "0.00"}s</div>
+                                  <div>{res.memory || "0"}KB</div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-slate-400">
+                      No test cases available
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-slate-400">No results</div>
               )}
             </div>
           </Dialog.Content>

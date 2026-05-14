@@ -25,7 +25,12 @@ const secondaryVariant = {
   },
 };
 
-export const FileUpload = ({ onChange }) => {
+export const FileUpload = ({
+  onChange,
+  showPreview = true,
+  dark = false,
+  clearSignal,
+}) => {
   const [files, setFiles] = useState([]);
   const fileInputRef = useRef(null);
 
@@ -33,6 +38,16 @@ export const FileUpload = ({ onChange }) => {
     setFiles((prevFiles) => [...prevFiles, ...newFiles]);
     onChange && onChange(newFiles[0]);
   };
+
+  // Reset internal state when parent signals a clear
+  React.useEffect(() => {
+    if (clearSignal == null) return;
+    setFiles([]);
+    try {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (e) {}
+    onChange && onChange(null);
+  }, [clearSignal]);
 
   const handleClick = () => {
     fileInputRef.current?.click();
@@ -73,7 +88,8 @@ export const FileUpload = ({ onChange }) => {
             Drag or drop your files here or click to upload
           </p>
           <div className="relative w-full mt-10 max-w-xl mx-auto">
-            {files.length > 0 &&
+            {showPreview &&
+              files.length > 0 &&
               files.map((file, idx) => (
                 <motion.div
                   key={"file" + idx}

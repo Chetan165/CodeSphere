@@ -1,35 +1,58 @@
-const pollJudge0 = async (tokens) => {
-  const tokenString = tokens.join(",");
+const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+const pollJudge0 = async (submissionId) => {
   let attempts = 0;
   const maxAttempts = 10;
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-  const start = Date.now();
 
   while (attempts < maxAttempts) {
     const res = await fetch(
-      `http://localhost:2358/submissions/batch?tokens=${tokenString}&base64_encoded=true&fields=time,memory,stderr,compile_output,message,status`,
+      `${backendURL}/api/Submission/submit/poll/${encodeURIComponent(submissionId)}`,
+      {
+        method: "GET",
+        credentials: "include",
+      },
     );
+
     const data = await res.json();
-
-    // Decode base64 fields
-    const decoded = data.submissions.map((d) => ({
-      ...d,
-      stderr: d.stderr ? atob(d.stderr) : null,
-      compile_output: d.compile_output ? atob(d.compile_output) : null,
-      message: d.message ? atob(d.message) : null,
-    }));
-
-    const allDone = decoded.every((s) => s.status.id >= 3);
-    if (allDone) {
-      console.log(`time taken=${Date.now() - start}ms`);
-      return decoded;
+    if (!res.ok || data?.ok === false) {
+      throw new Error(data?.message || "Failed to poll submission");
     }
 
-    await delay(3000);
+    if (data.status !== "pending") return data;
+
+    await delay(2000);
     attempts++;
   }
 
-  throw new Error("Judge0 timed out. Try again.");
+  throw new Error("Submission timed out. Try again.");
 };
 
-export default pollJudge0;
+const pollRun = async (runId) => {
+  let attempts = 0;
+  const maxAttempts = 10;
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+  while (attempts < maxAttempts) {
+    const res = await fetch(
+      `${backendURL}/api/Submission/run/poll/${encodeURIComponent(runId)}`,
+      {
+        method: "GET",
+        credentials: "include",
+      },
+    );
+
+    const data = await res.json();
+    if (!res.ok || data?.ok === false) {
+      throw new Error(data?.message || "Failed to poll run");
+    }
+
+    if (data.status !== "pending") return data;
+
+    await delay(2000);
+    attempts++;
+  }
+
+  throw new Error("Run timed out. Try again.");
+};
+
+export { pollJudge0, pollRun };

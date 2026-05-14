@@ -8,15 +8,34 @@ import {
   IconUserBolt,
 } from "@tabler/icons-react";
 import { motion } from "motion/react";
+import { Link } from "react-router-dom";
 import { cn } from "../utils/cn";
 import UserAuth from "../UserAuth.jsx";
 import { Code, File, FileQuestion, UserIcon } from "lucide-react";
 
 export function SidebarDemo({ children }) {
   const [User, setUser] = useState();
+  const [loadingUser, setLoadingUser] = useState(true);
+
   useEffect(() => {
-    UserAuth(setUser);
+    let mounted = true;
+    (async () => {
+      try {
+        await UserAuth((u) => {
+          if (!mounted) return;
+          setUser(u);
+        });
+      } catch (e) {
+        // ignore; UserAuth already shows errors/toasts
+      } finally {
+        if (mounted) setLoadingUser(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
   }, []);
+
   let links = [
     {
       label: "Dashboard",
@@ -48,7 +67,8 @@ export function SidebarDemo({ children }) {
     },
   ];
   const [open, setOpen] = useState(false);
-  if (User && User.admin) {
+  const userData = User; // use the fetched user instead of localStorage
+  if (userData && userData.admin) {
     links = [
       ...links,
       {
@@ -74,6 +94,23 @@ export function SidebarDemo({ children }) {
       <IconArrowLeft className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
     ),
   });
+  const avatarSrc = userData?.photos?.[0]?.value || null;
+  if (loadingUser) {
+    return (
+      <div className="flex w-screen h-screen overflow-hidden bg-black">
+        <Sidebar open={open} setOpen={setOpen}>
+          <SidebarBody className="justify-between gap-10 h-full">
+            <div className="flex flex-1 flex-col overflow-x-hidden">
+              <div className="mt-8 flex flex-col gap-2">Loading...</div>
+            </div>
+          </SidebarBody>
+        </Sidebar>
+        <main className="flex flex-col flex-1 w-full h-full overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    );
+  }
   return (
     <div className={cn("flex w-screen h-screen overflow-hidden bg-black")}>
       <Sidebar open={open} setOpen={setOpen}>
@@ -89,26 +126,19 @@ export function SidebarDemo({ children }) {
           <div>
             <SidebarLink
               link={{
-                label: User ? User.displayName : "Loading...",
+                label: userData ? userData.displayName : "",
                 href: "/Dashboard",
-                icon: (
+
+                icon: avatarSrc ? (
                   <img
-                    src={
-                      User ? (
-                        User.photos.length > 0 ? (
-                          User.photos[User.photos.length - 1].value
-                        ) : (
-                          <UserIcon />
-                        )
-                      ) : (
-                        <UserIcon />
-                      )
-                    }
+                    src={avatarSrc}
                     className="h-7 w-7 shrink-0 rounded-full"
                     width={50}
                     height={50}
                     alt="Avatar"
                   />
+                ) : (
+                  <UserIcon className="h-7 w-7 shrink-0 rounded-full text-neutral-400" />
                 ),
               }}
             />
@@ -123,8 +153,8 @@ export function SidebarDemo({ children }) {
 }
 export const Logo = () => {
   return (
-    <a
-      href="#"
+    <Link
+      to="/"
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black"
     >
       <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-black dark:bg-white" />
@@ -135,16 +165,16 @@ export const Logo = () => {
       >
         CodeSphere
       </motion.span>
-    </a>
+    </Link>
   );
 };
 export const LogoIcon = () => {
   return (
-    <a
-      href="#"
+    <Link
+      to="/"
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black"
     >
       <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-black dark:bg-white" />
-    </a>
+    </Link>
   );
 };

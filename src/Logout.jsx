@@ -1,22 +1,32 @@
 import React from "react";
-import RedButton from "./component/elements/RedButton";
+import Buttonv2 from "./component/ui/Buttonv2";
+import { useNavigate } from "react-router-dom";
+const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 const Logout = () => {
+  const navigate = useNavigate();
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:3000/logout", {
+      await fetch(`${backendURL}/logout`, {
         method: "GET",
         credentials: "include", // ensures cookies are sent
       });
 
-      localStorage.removeItem("user"); // optional cleanup
-      window.location.href = "/"; // redirect to home or login
+      localStorage.removeItem("CodeSphereUserData"); // optional cleanup
+      navigate("/");
     } catch (err) {
       console.error("Logout failed:", err);
     }
   };
 
-  return <RedButton funct={handleLogout} text="Logout"></RedButton>;
+  return (
+    <Buttonv2
+      text="Logout"
+      ApiCall={async () => await handleLogout()}
+      funct={() => {}}
+      variant="red"
+    />
+  );
 };
 
 export default Logout;

@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
-import { createRoot } from "react-dom/client";
 import ContestCreationForm from "./Contest_admin.jsx";
 import Register from "./Register.jsx";
 import Sample from "./Pages/Sample.jsx";
@@ -10,6 +9,7 @@ import App from "./App.jsx";
 import Dashboard from "./Dashboard.jsx";
 import ProblemCreationForm from "./Problem_admin.jsx";
 import Contest from "./Contest.jsx";
+import ContestEdit from "./ContestEdit.jsx";
 import { Toaster } from "react-hot-toast";
 import AutoCraft from "./Pages/AutoCraft.jsx";
 import ContestChallenges from "./ContestChallenges.jsx";
@@ -62,6 +62,10 @@ const router = createBrowserRouter([
         element: <ContestChallenges />,
       },
       {
+        path: "contests/:id/edit",
+        element: <ContestEdit />,
+      },
+      {
         path: "contests/:ContestId/challenges/:id",
         element: <SolvePage />,
       },
@@ -72,6 +76,15 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")).render(
   <StrictMode>
     <RouterProvider router={router} />
-    <Toaster />
+    <Toaster
+      position="top-center"
+      toastOptions={{
+        style: {
+          background: "#111827",
+          color: "#f9fafb",
+          border: "1px solid #374151",
+        },
+      }}
+    />
   </StrictMode>,
 );

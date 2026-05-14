@@ -1,6 +1,7 @@
 "use client";
 import { cn } from "../../utils/cn";
 import React, { useState, createContext, useContext } from "react";
+import { NavLink, Link } from "react-router-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 
@@ -118,14 +119,22 @@ export const MobileSidebar = ({ className, children, ...props }) => {
 };
 
 export const SidebarLink = ({ link, className, ...props }) => {
-  const { open, animate } = useSidebar();
+  const { open, animate, setOpen } = useSidebar();
   return (
-    <a
-      href={link.href}
-      className={cn(
-        "flex items-center justify-start gap-2  group/sidebar py-2",
-        className,
-      )}
+    <NavLink
+      to={link.href}
+      onClick={() => {
+        try {
+          setOpen(false);
+        } catch (e) {}
+      }}
+      className={({ isActive }) =>
+        cn(
+          "flex items-center justify-start gap-2  group/sidebar py-2",
+          isActive ? "opacity-100" : "opacity-90",
+          className,
+        )
+      }
       {...props}
     >
       {link.icon}
@@ -138,6 +147,6 @@ export const SidebarLink = ({ link, className, ...props }) => {
       >
         {link.label}
       </motion.span>
-    </a>
+    </NavLink>
   );
 };

@@ -8,6 +8,7 @@ import AILoader from "../component/elements/AILoader";
 import { HoverEffect } from "../component/ui/card-hover-effect";
 import { CodeBlock } from "../component/ui/code-block";
 import { MultiStepLoader } from "./MultiStepLoader";
+const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 const loadingStates = [
   {
@@ -71,7 +72,7 @@ const AutoCraft = () => {
   const DownloadFile = async () => {
     try {
       const data = await fetch(
-        `http://localhost:3000/admin/Download/${localStorage.getItem("UserSession")}`,
+        `${backendURL}/admin/Download/${localStorage.getItem("UserSession")}`,
         {
           method: "GET",
         },
@@ -96,7 +97,7 @@ const AutoCraft = () => {
       setloading(true);
       setButtonLoading(true);
       const res = await fetch(
-        `http://localhost:3000/admin/routeCE/pipeline/${localStorage.getItem("UserSession")}`,
+        `${backendURL}/admin/routeCE/pipeline/${localStorage.getItem("UserSession")}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -105,6 +106,7 @@ const AutoCraft = () => {
           }),
         },
       );
+      if (!res.ok) throw new Error("CE Pipeline failed");
       const res2 = await res.json();
       setTimeout(() => {
         setDone(true);
@@ -114,12 +116,16 @@ const AutoCraft = () => {
       console.log(res2);
     } catch (err) {
       console.log(err);
+      setButtonLoading(false);
+      setloading(false);
+      alert("Execution failed. Please check the logs.");
+      throw err;
     }
   };
   const SendData = async () => {
     try {
       setloading(true);
-      const data = await fetch("http://localhost:3000/admin/genai/problem", {
+      const data = await fetch(`${backendURL}/admin/genai/problem`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -130,12 +136,15 @@ const AutoCraft = () => {
           questionStyle: questionStyle,
         }),
       });
+      if (!data.ok) throw new Error("Failed to generate problem");
       const parsedres = await data.json();
       localStorage.setItem("UserSession", parsedres.sessionId);
       console.log(parsedres);
       SetStep1Data(parsedres);
     } catch (err) {
       console.log(err);
+      alert("Error parsing or sending data. Please try again.");
+      throw err;
     } finally {
       setloading(false);
     }
@@ -143,26 +152,26 @@ const AutoCraft = () => {
   const GenerateTC = async () => {
     try {
       setloading(true);
-      const data = await fetch(
-        "http://localhost:3000/admin/genai/testcaseGeneration",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            sessionId: localStorage.getItem("UserSession"),
-            numTestcases: numTestcases,
-            testcaseTypes: testcaseTypes,
-            tags: selectedTags,
-            expectedComplexity: complexity,
-          }),
-        },
-      );
+      const data = await fetch(`${backendURL}/admin/genai/testcaseGeneration`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          sessionId: localStorage.getItem("UserSession"),
+          numTestcases: numTestcases,
+          testcaseTypes: testcaseTypes,
+          tags: selectedTags,
+          expectedComplexity: complexity,
+        }),
+      });
+      if (!data.ok) throw new Error("Failed to generate testcases");
       const parsedres = await data.json();
       console.log(parsedres);
       SetStep2Data(parsedres);
     } catch (err) {
       console.log(err);
+      alert("Error generating testcases. Please try again.");
+      throw err;
     } finally {
       setloading(false);
     }
@@ -170,7 +179,7 @@ const AutoCraft = () => {
   useEffect(() => {
     try {
       const fetchTags = async () => {
-        const res = await fetch("http://localhost:3000/admin/autocraft/tags", {
+        const res = await fetch(`${backendURL}/admin/autocraft/tags`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -369,7 +378,13 @@ const AutoCraft = () => {
                         });
                       }}
                     >
-                      {["sample", "edge", "large", "generic"].map((type) => (
+                      {[
+                        "sample",
+                        "edge",
+                        "large",
+                        "generic",
+                        "adversarial",
+                      ].map((type) => (
                         <option key={type} value={type}>
                           {type.charAt(0).toUpperCase() + type.slice(1)}
                         </option>
@@ -459,7 +474,7 @@ const AutoCraft = () => {
                     {
                       title: "Input Format Preview",
                       description:
-                        Step1Data?.genaiResponse.inputFormat?.replace(
+                        Step1Data?.genaiResponse?.inputFormat?.replace(
                           /\n/g,
                           "<br/>",
                         ) || "AI-generated input format will appear here.",
@@ -467,7 +482,7 @@ const AutoCraft = () => {
                     {
                       title: "Output Format Preview",
                       description:
-                        Step1Data?.genaiResponse.outputFormat?.replace(
+                        Step1Data?.genaiResponse?.outputFormat?.replace(
                           /\n/g,
                           "<br/>",
                         ) || "AI-generated output format will appear here.",
@@ -475,7 +490,7 @@ const AutoCraft = () => {
                     {
                       title: "Constraints Preview",
                       description:
-                        Step1Data?.genaiResponse.constraints?.replace(
+                        Step1Data?.genaiResponse?.constraints?.replace(
                           /\n/g,
                           "<br/>",
                         ) || "AI-generated constraints will appear here.",
@@ -483,7 +498,7 @@ const AutoCraft = () => {
                     {
                       title: "Sample Input Preview",
                       description:
-                        Step1Data?.genaiResponse.sampleInput?.replace(
+                        Step1Data?.genaiResponse?.sampleInput?.replace(
                           /\n/g,
                           "<br/>",
                         ) || "AI-generated sample testcases will appear here.",
@@ -491,7 +506,7 @@ const AutoCraft = () => {
                     {
                       title: "Sample Output Preview",
                       description:
-                        Step1Data?.genaiResponse.sampleOutput?.replace(
+                        Step1Data?.genaiResponse?.sampleOutput?.replace(
                           /\n/g,
                           "<br/>",
                         ) || "AI-generated sample outputs will appear here.",
@@ -504,7 +519,7 @@ const AutoCraft = () => {
                 <CodeBlock
                   filename={"Solution.py"}
                   language="python"
-                  code={Step1Data?.genaiResponse.solution}
+                  code={Step1Data?.genaiResponse?.solution || ""}
                 />
               </div>
             )}
