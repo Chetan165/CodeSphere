@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import ChallengeCard from "./ChallengeCard";
@@ -12,7 +12,7 @@ const ContestChallenges = () => {
   const [contestMeta, setContestMeta] = useState(null);
   const ContestId = useParams().id;
 
-  const fetchChallenges = async () => {
+  const fetchChallenges = useCallback(async () => {
     try {
       // fetch contest meta (server time + timings)
       const metaRes = await fetch(
@@ -61,12 +61,12 @@ const ContestChallenges = () => {
       console.log(err);
       toast.error("Error loading contest");
     }
-  };
+  }, [ContestId]);
 
   useEffect(() => {
     UserAuth(setUser);
     fetchChallenges();
-  }, [ContestId]);
+  }, [fetchChallenges]);
 
   // listen for updates from SolvePage (score/status updates) and update list in-place
   useEffect(() => {
@@ -90,7 +90,7 @@ const ContestChallenges = () => {
     return () => window.removeEventListener("challengeUpdated", handler);
   }, []);
   return User && User.uid ? (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black">
+    <div className="min-h-screen flex flex-col items-center justify-start bg-black overflow-y-auto py-6">
       <div className="w-full max-w-3xl p-6">
         <h2 className="text-xl text-white font-semibold mb-4">
           {contestMeta?.title || "Contest"}

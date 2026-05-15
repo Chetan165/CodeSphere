@@ -7,7 +7,6 @@ import {
   IconTable,
   IconUserBolt,
 } from "@tabler/icons-react";
-import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { cn } from "../utils/cn";
 import UserAuth from "../UserAuth.jsx";
@@ -25,7 +24,7 @@ export function SidebarDemo({ children }) {
           if (!mounted) return;
           setUser(u);
         });
-      } catch (e) {
+      } catch {
         // ignore; UserAuth already shows errors/toasts
       } finally {
         if (mounted) setLoadingUser(false);
@@ -39,7 +38,7 @@ export function SidebarDemo({ children }) {
   let links = [
     {
       label: "Dashboard",
-      href: "/Dashboard",
+      href: "/dashboard",
       icon: (
         <IconTable className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
       ),
@@ -127,7 +126,7 @@ export function SidebarDemo({ children }) {
             <SidebarLink
               link={{
                 label: userData ? userData.displayName : "",
-                href: "/Dashboard",
+                href: "/dashboard",
 
                 icon: avatarSrc ? (
                   <img
@@ -158,13 +157,9 @@ export const Logo = () => {
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black"
     >
       <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-black dark:bg-white" />
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="font-medium whitespace-pre text-black dark:text-white"
-      >
+      <span className="font-medium whitespace-pre text-black dark:text-white">
         CodeSphere
-      </motion.span>
+      </span>
     </Link>
   );
 };

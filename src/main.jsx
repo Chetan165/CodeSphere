@@ -22,6 +22,10 @@ const router = createBrowserRouter([
     element: <App />,
   },
   {
+    path: "/register",
+    element: <Register />,
+  },
+  {
     path: "/",
     element: (
       <SidebarDemo>
@@ -36,10 +40,6 @@ const router = createBrowserRouter([
       {
         path: "sample",
         element: <Sample />,
-      },
-      {
-        path: "register",
-        element: <Register />,
       },
       {
         path: "admin/contest",

@@ -108,7 +108,7 @@ export default function Register() {
         throw new Error(body.msg || "Registration failed");
       }
       if (response.ok && body.ok) {
-        navigate("/Dashboard");
+        navigate("/dashboard");
         return;
       }
 
