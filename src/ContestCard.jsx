@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
-import { BorderMagicButton } from "./component/ui/BorderMagicButton";
 import Buttonv2 from "./component/ui/Buttonv2";
+import { BorderMagicButton } from "./component/ui/BorderMagicButton";
 import { useNavigate } from "react-router-dom";
 import RegistrationModal from "./component/ui/RegistrationModal";
 const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
@@ -14,6 +14,12 @@ const ContestCard = ({
   compact = false,
 }) => {
   const { title, description, id, startTime, endTime } = contest;
+  const nowTs = Date.now();
+  const startTs = Date.parse(startTime);
+  const endTs = Date.parse(endTime);
+  const status =
+    nowTs < startTs ? "upcoming" : nowTs > endTs ? "past" : "ongoing";
+
   const formatDateTime = (dateStr) => {
     const date = new Date(dateStr);
     return date.toLocaleString(undefined, {
@@ -21,6 +27,7 @@ const ContestCard = ({
       timeStyle: "short",
     });
   };
+
   const navigate = useNavigate();
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   // track whether we are in the flow from the modal (prevents double-check)
@@ -151,7 +158,9 @@ const ContestCard = ({
         try {
           const j = await regRes.json();
           if (j && j.message) msg = j.message;
-        } catch (e) {}
+        } catch (parseErr) {
+          console.warn("Failed to parse contest registration error", parseErr);
+        }
         toast.error(msg);
         return;
       }
@@ -200,12 +209,26 @@ const ContestCard = ({
     }
   };
 
+  const confirmThenDelete = async () => {
+    try {
+      // simple confirmation to prevent accidental deletes
+      // replace with a styled modal later if desired
+      const ok = confirm("Are you sure you want to delete this contest?");
+      if (!ok) return;
+      await handleDelete();
+      toast.success("Contest deleted");
+    } catch (e) {
+      console.warn("delete failed", e);
+      toast.error("Failed to delete contest");
+    }
+  };
+
   if (compact) {
     return (
       <>
-        <div className="w-full mb-3 rounded-xl p-px bg-[linear-gradient(135deg,#071226_0%,#0b0b0d_100%)] shadow-md max-w-xl">
-          <div className="bg-zinc-900/90 rounded-lg p-3 relative overflow-hidden border border-zinc-800 backdrop-blur-sm flex items-center justify-between">
-            <div className="flex-1 pr-4">
+        <div className="w-full mb-3 rounded-xl border border-white/10 bg-white/5 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-shadow hover:shadow-[0_14px_32px_rgba(0,0,0,0.36)] backdrop-blur-xl">
+          <div className="rounded-xl p-3 relative overflow-hidden bg-black/15 flex items-center justify-between">
+            <div className="flex-1 pr-4 min-w-0">
               <h2 className="text-lg font-semibold text-white truncate">
                 {contest.title}
               </h2>
@@ -215,25 +238,56 @@ const ContestCard = ({
             </div>
             <div className="flex items-center gap-2">
               {admin && (
-                <div className="w-24">
-                  <Buttonv2
-                    text="Edit"
-                    ApiCall={async () => {
-                      navigate(`/contests/${id}/edit`);
-                    }}
-                    funct={() => {}}
-                    variant="blue"
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="flex-shrink-0">
+                    <Buttonv2
+                      text="Edit"
+                      ApiCall={async () => {
+                        navigate(`/contests/${id}/edit`);
+                      }}
+                      funct={() => {}}
+                      variant="blue"
+                    />
+                  </div>
                 </div>
               )}
-              <div className={`w-28 ${admin ? "" : ""}`}>
-                <Buttonv2
-                  text={admin ? "View" : "View"}
-                  ApiCall={async () => {
-                    await enterContest();
-                  }}
-                  funct={() => {}}
-                />
+              <div className="flex-shrink-0 flex items-center gap-2">
+                <div>
+                  <Buttonv2
+                    text="View"
+                    ApiCall={async () => {
+                      await enterContest();
+                    }}
+                    funct={() => {}}
+                  />
+                </div>
+                {admin && status === "upcoming" && (
+                  <div>
+                    <BorderMagicButton
+                      size={40}
+                      active={false}
+                      onClick={confirmThenDelete}
+                      aria-label="Delete contest"
+                      title="Delete contest"
+                      className="ml-2"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-4 h-4 text-white"
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6" />
+                      </svg>
+                    </BorderMagicButton>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -250,37 +304,10 @@ const ContestCard = ({
 
   return (
     <>
-      <div className="w-full max-w-2xl mb-6 rounded-3xl p-px bg-[linear-gradient(135deg,#071226_0%,#0b0b0d_100%)] shadow-xl">
-        <div className="bg-zinc-900/90 rounded-2xl p-6 pr-20 relative overflow-hidden border border-zinc-800 backdrop-blur-sm">
-          {admin ? (
-            <div className="absolute top-4 right-4">
-              <BorderMagicButton
-                size={44}
-                active={true}
-                onClick={handleDelete}
-                aria-label="Delete contest"
-                title="Delete contest"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-5 h-5 text-white"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                  <path d="M10 11v6M14 11v6" />
-                </svg>
-              </BorderMagicButton>
-            </div>
-          ) : null}
-
+      <div className="w-full mb-6 rounded-3xl border border-white/10 bg-white/5 shadow-[0_14px_34px_rgba(0,0,0,0.32)] transition-shadow hover:shadow-[0_18px_42px_rgba(0,0,0,0.4)] backdrop-blur-xl">
+        <div className="rounded-3xl p-6 relative overflow-hidden bg-black/15">
           <div className="flex items-start gap-6">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-semibold text-white leading-tight">
                 {title}
               </h1>
@@ -307,18 +334,46 @@ const ContestCard = ({
 
           <div className="mt-6 pt-4 border-t border-zinc-800 flex justify-end">
             <div className="flex items-center gap-3">
-              {admin && (
-                <Buttonv2
-                  text="Edit"
-                  ApiCall={async () => {
-                    navigate(`/contests/${id}/edit`);
-                  }}
-                  funct={() => {}}
-                  variant="blue"
-                />
+              {admin && status === "upcoming" && (
+                <BorderMagicButton
+                  size={44}
+                  active={true}
+                  onClick={confirmThenDelete}
+                  aria-label="Delete contest"
+                  title="Delete contest"
+                  className="mr-3"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-5 h-5 text-white"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                  </svg>
+                </BorderMagicButton>
               )}
 
-              <div className="w-full max-w-xs">
+              {admin && (
+                <div className="flex-shrink-0">
+                  <Buttonv2
+                    text="Edit"
+                    ApiCall={async () => {
+                      navigate(`/contests/${id}/edit`);
+                    }}
+                    funct={() => {}}
+                    variant="blue"
+                  />
+                </div>
+              )}
+
+              <div className="flex-shrink-0">
                 <Buttonv2
                   text="View Contest"
                   ApiCall={async () => {

@@ -10,8 +10,19 @@ const ChallengeCard = ({
   status,
   maxScore,
 }) => {
+  const statusTone = (() => {
+    const label = (status || "").toLowerCase();
+    if (label.includes("solved")) {
+      return "border-emerald-500/30 text-emerald-200";
+    }
+    if (label.includes("partial")) {
+      return "border-amber-500/30 text-amber-200";
+    }
+    return "border-rose-500/30 text-rose-200";
+  })();
+
   return (
-    <div className="w-full max-w-2xl p-4 mb-6 rounded-2xl shadow-md bg-zinc-900/80 ring-1 ring-zinc-800 border border-zinc-800 hover:shadow-lg transition-shadow">
+    <div className="w-full max-w-2xl p-4 mb-6 rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-shadow hover:shadow-[0_14px_32px_rgba(0,0,0,0.36)] backdrop-blur-xl">
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
           <h3 className="text-lg font-medium text-white leading-snug">
@@ -21,13 +32,7 @@ const ChallengeCard = ({
           <div className="flex items-center gap-3 mt-2">
             {status && (
               <span
-                className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                  status.toLowerCase().includes("solved")
-                    ? "bg-emerald-800 text-emerald-200"
-                    : status.toLowerCase().includes("partial")
-                      ? "bg-yellow-800 text-yellow-200"
-                      : "bg-rose-800 text-rose-200"
-                }`}
+                className={`inline-flex items-center rounded-full border bg-black/15 px-2 py-1 text-xs font-semibold ${statusTone}`}
               >
                 {status}
               </span>

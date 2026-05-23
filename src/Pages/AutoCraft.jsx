@@ -63,11 +63,10 @@ const AutoCraft = () => {
   const [Step1Data, SetStep1Data] = useState(null);
   const [Step2Data, SetStep2Data] = useState(null);
   const [loading, setloading] = useState(false);
-  const [numTestcases, setNumTestcases] = useState(3);
-  const [testcaseTypes, setTestcaseTypes] = useState(Array(3).fill("sample"));
   const [done, setDone] = useState(false);
   const [buttonLoading, setButtonLoading] = useState(false);
   const [questionStyle, setQuestionStyle] = useState("LeetCode");
+  const [additionalContext, setAdditionalContext] = useState("");
 
   const DownloadFile = async () => {
     try {
@@ -112,7 +111,7 @@ const AutoCraft = () => {
         setDone(true);
         setButtonLoading(false);
         setloading(false);
-      }, 8500);
+      }, 30000);
       console.log(res2);
     } catch (err) {
       console.log(err);
@@ -134,6 +133,7 @@ const AutoCraft = () => {
           difficulty: difficulty,
           expectedComplexity: complexity,
           questionStyle: questionStyle,
+          additionalContext: additionalContext,
         }),
       });
       if (!data.ok) throw new Error("Failed to generate problem");
@@ -158,10 +158,6 @@ const AutoCraft = () => {
         credentials: "include",
         body: JSON.stringify({
           sessionId: localStorage.getItem("UserSession"),
-          numTestcases: numTestcases,
-          testcaseTypes: testcaseTypes,
-          tags: selectedTags,
-          expectedComplexity: complexity,
         }),
       });
       if (!data.ok) throw new Error("Failed to generate testcases");
@@ -205,6 +201,7 @@ const AutoCraft = () => {
           States={loadingStates}
           loading={loading}
           setLoading={setloading}
+          duration={3500}
         />
       ) : (
         <div></div>
@@ -278,18 +275,6 @@ const AutoCraft = () => {
               </div>
               {/* input fields for parameters */}
               <div className="mt-5 mb-3">
-                <label
-                  htmlFor="difficulty"
-                  className="block mb-1 font-semibold text-white"
-                >
-                  Expected Complexity (Optional)
-                </label>
-                <input
-                  type="text"
-                  onChange={(e) => setComplexity(e.target.value)}
-                  placeholder="Provide Expected Complexity for the Solution"
-                  className="w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
-                ></input>
                 <label className="block mt-2 text-sm text-slate-400">
                   Question Style
                 </label>
@@ -309,6 +294,15 @@ const AutoCraft = () => {
                     Codeforces/CodeChef
                   </option>
                 </select>
+                <div className="mt-5 mb-3">
+                  <label className="block mt-2 text-sm text-slate-400">
+                    Additional Context (Optional)
+                    <textarea
+                      onChange={(e) => setAdditionalContext(e.target.value)}
+                      className="w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
+                    ></textarea>
+                  </label>
+                </div>
               </div>
               <Buttonv2
                 ApiCall={SendData}
@@ -328,83 +322,19 @@ const AutoCraft = () => {
                 preview UI goes here.)
               </p>
               {/* Number of Testcases Dropdown */}
-              <div className="mb-6">
-                <label className="block mb-1 font-semibold text-white">
-                  Number of Testcases
-                </label>
-                <select
-                  className="w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
-                  value={numTestcases}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    setNumTestcases(n);
-                    setTestcaseTypes((prev) => {
-                      if (n > prev.length) {
-                        return [
-                          ...prev,
-                          ...Array(n - prev.length).fill("sample"),
-                        ];
-                      } else {
-                        return prev.slice(0, n);
-                      }
-                    });
-                  }}
-                >
-                  {[...Array(10)].map((_, i) => (
-                    <option key={i + 1} value={i + 1}>
-                      {i + 1}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {/* Testcase Type Selectors */}
-              <div className="flex flex-col gap-4 mb-8">
-                {Array.from({ length: numTestcases }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="flex flex-col md:flex-row gap-3 items-center"
-                  >
-                    <label className="text-white font-medium min-w-[120px]">
-                      Testcase {idx + 1} Type
-                    </label>
-                    <select
-                      className="flex-1 rounded-md bg-neutral-800 border border-pink-400/40 text-white p-2 focus:ring-2 focus:ring-pink-400"
-                      value={testcaseTypes[idx]}
-                      onChange={(e) => {
-                        setTestcaseTypes((prev) => {
-                          const arr = [...prev];
-                          arr[idx] = e.target.value;
-                          return arr;
-                        });
-                      }}
-                    >
-                      {[
-                        "sample",
-                        "edge",
-                        "large",
-                        "generic",
-                        "adversarial",
-                      ].map((type) => (
-                        <option key={type} value={type}>
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-              </div>
+
               <Buttonv2
                 ApiCall={GenerateTC}
                 funct={setCurrentStep}
                 step={2}
                 text="Accept & Next"
               />
-              <button className="p-[3px] relative w-fit mt-4">
+              {/* <button className="p-[3px] relative w-fit mt-4">
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg" />
                 <div className="px-8 py-2  bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
                   Regenerate
                 </div>
-              </button>
+              </button> */}
             </div>
           )}
           {currentStep === 2 && (

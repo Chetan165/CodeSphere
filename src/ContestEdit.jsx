@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import UserAuth from "./UserAuth";
 import { useNavigate, useParams } from "react-router-dom";
@@ -49,7 +49,7 @@ export default function ContestEdit() {
   }, []);
 
   // Fetch contest details (uses same API as contest page)
-  const fetchContest = async () => {
+  const fetchContest = useCallback(async () => {
     try {
       const res = await fetch(`${backendURL}/api/ContestChallenges`, {
         method: "POST",
@@ -74,13 +74,13 @@ export default function ContestEdit() {
       console.warn(e);
       toast.error("Failed to load contest");
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     if (id) fetchContest();
-  }, [id]);
+  }, [id, fetchContest]);
 
-  const fetchProblem = async () => {
+  const fetchProblem = useCallback(async () => {
     try {
       const res = await fetch(`${backendURL}/api/problems`, {
         method: "POST",
@@ -93,14 +93,14 @@ export default function ContestEdit() {
     } catch (err) {
       console.log(err);
     }
-  };
+  }, [search]);
 
   useEffect(() => {
     if (search.trim() !== "") {
       const t = setTimeout(() => fetchProblem(), 400);
       return () => clearTimeout(t);
     } else SetProblems([]);
-  }, [search]);
+  }, [search, fetchProblem]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -138,56 +138,67 @@ export default function ContestEdit() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <LabelInputContainer>
-              <Label htmlFor="title">Title</Label>
-              <input
-                id="title"
-                name="title"
-                value={form.title}
-                onChange={handleChange}
-                className="rounded-lg bg-black text-white border border-white/20 p-3"
-                required
-              />
-            </LabelInputContainer>
+            <div className="w-full mb-6 rounded-3xl p-px bg-[linear-gradient(135deg,#071226_0%,#0b0b0d_100%)] shadow-xl">
+              <div className="bg-zinc-900/90 rounded-2xl p-6 relative overflow-hidden border border-zinc-800 backdrop-blur-sm">
+                <h2 className="admin-subheading text-xl font-bold mb-3 tracking-wide drop-shadow">
+                  Contest Details
+                </h2>
+                <div className="space-y-4">
+                  <LabelInputContainer>
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      placeholder="Contest 1A"
+                      type="text"
+                      value={form.title}
+                      onChange={handleChange}
+                      required
+                      className="bg-zinc-800 text-white"
+                    />
+                  </LabelInputContainer>
 
-            <LabelInputContainer>
-              <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
-                name="description"
-                rows={4}
-                value={form.description}
-                onChange={handleChange}
-                className="rounded-lg bg-black text-white border border-white/20 p-3"
-                required
-              />
-            </LabelInputContainer>
+                  <LabelInputContainer>
+                    <Label htmlFor="description">Description</Label>
+                    <textarea
+                      id="description"
+                      name="description"
+                      rows={4}
+                      value={form.description}
+                      onChange={handleChange}
+                      className="rounded-2xl bg-zinc-800 text-white border border-white/6 px-4 py-3 placeholder:text-zinc-400 outline-none focus:border-white/10"
+                      required
+                    />
+                  </LabelInputContainer>
 
-            <div className="flex gap-4">
-              <LabelInputContainer className="flex-1">
-                <Label htmlFor="startTime">Start Time</Label>
-                <input
-                  id="startTime"
-                  name="startTime"
-                  type="datetime-local"
-                  value={form.startTime}
-                  onChange={handleChange}
-                  className="rounded-lg bg-zinc-800 text-white border border-white/20 p-3"
-                  required
-                />
-              </LabelInputContainer>
-              <LabelInputContainer className="flex-1">
-                <Label htmlFor="endTime">End Time</Label>
-                <input
-                  id="endTime"
-                  name="endTime"
-                  type="datetime-local"
-                  value={form.endTime}
-                  onChange={handleChange}
-                  className="rounded-lg bg-zinc-800 text-white border border-white/20 p-3"
-                  required
-                />
-              </LabelInputContainer>
+                  <div className="flex gap-4">
+                    <LabelInputContainer className="flex-1">
+                      <Label htmlFor="startTime">Start Time</Label>
+                      <Input
+                        id="startTime"
+                        name="startTime"
+                        type="datetime-local"
+                        value={form.startTime}
+                        onChange={handleChange}
+                        className="bg-zinc-800 text-white"
+                        required
+                      />
+                    </LabelInputContainer>
+                    <LabelInputContainer className="flex-1">
+                      <Label htmlFor="endTime">End Time</Label>
+                      <Input
+                        id="endTime"
+                        name="endTime"
+                        type="datetime-local"
+                        value={form.endTime}
+                        onChange={handleChange}
+                        className="bg-zinc-800 text-white"
+                        required
+                      />
+                    </LabelInputContainer>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

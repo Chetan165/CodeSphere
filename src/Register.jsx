@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import Buttonv2 from "./component/ui/Buttonv2";
+
 const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 export default function Register() {
@@ -14,6 +16,7 @@ export default function Register() {
     roll: "",
     yearStart: "23",
   });
+
   const branches = [
     "COMP",
     "IT",
@@ -127,35 +130,50 @@ export default function Register() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        Checking session...
+      <div className="min-h-screen flex items-center justify-center bg-[#0b0b0d] text-slate-200">
+        <div className="rounded-2xl border border-white/10 bg-zinc-900/80 px-5 py-4 shadow-[0_14px_34px_rgba(0,0,0,0.38)] backdrop-blur-sm">
+          Checking session...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-white">
+    <div className="min-h-screen flex items-center justify-center bg-[#0b0b0d] px-4 py-10 text-slate-200">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -left-24 top-10 h-72 w-72 rounded-full bg-sky-500/10 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-80 w-80 rounded-full bg-white/5 blur-3xl" />
+      </div>
       <form
         onSubmit={handleSubmit}
-        className="bg-white shadow-md p-8 rounded-xl w-full max-w-md space-y-4"
+        className="relative z-10 w-full max-w-lg space-y-5 rounded-3xl border border-white/10 bg-zinc-900/80 p-6 shadow-[0_14px_34px_rgba(0,0,0,0.38)] backdrop-blur-sm md:p-8"
       >
-        <h2 className="text-2xl font-bold text-center text-indigo-700 mb-4">
-          User Registration
-        </h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-[0.3em] text-slate-400">Setup</div>
+            <h2 className="mt-1 text-2xl font-semibold text-white">User Registration</h2>
+          </div>
+          <div className="rounded-full border border-white/10 bg-zinc-950/60 px-3 py-1 text-xs font-medium text-slate-300">Profile</div>
+        </div>
+
         <input
           type="text"
           name="name"
           placeholder="Full Name"
-          className="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring"
+          className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 placeholder:text-zinc-500 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10"
           value={formData.name}
           onChange={handleChange}
           required
         />
 
         <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-full">
+            <label className="text-sm text-slate-400 block mb-2">Branch</label>
+          </div>
+
           <select
             name="branch"
-            className="w-full px-4 py-2 border rounded-xl"
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10 mt-1"
             value={formData.branch}
             onChange={handleChange}
           >
@@ -168,7 +186,7 @@ export default function Register() {
 
           <select
             name="section"
-            className="w-full px-4 py-2 border rounded-xl"
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10 mt-1"
             value={formData.section}
             onChange={handleChange}
           >
@@ -180,39 +198,45 @@ export default function Register() {
           </select>
         </div>
 
-        <input
-          type="text"
-          name="roll"
-          placeholder="Roll Number (e.g. 48)"
-          className="w-full px-4 py-2 border rounded-xl"
-          value={formData.roll}
-          onChange={handleChange}
-          required
-        />
-
-        <select
-          name="yearStart"
-          className="w-full px-4 py-2 border rounded-xl"
-          value={formData.yearStart}
-          onChange={handleChange}
-        >
-          {years.map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
-
-        <div className="text-sm text-gray-500 mt-2">
-          UID: <span className="font-mono text-indigo-600">{uid}</span>
+        <div className="text-sm text-slate-400">
+          <label className="block mb-2">Roll Number</label>
+          <input
+            type="text"
+            name="roll"
+            placeholder="Roll Number (e.g. 48)"
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 placeholder:text-zinc-500 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10 mt-1"
+            value={formData.roll}
+            onChange={handleChange}
+            required
+          />
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-indigo-600 text-white font-semibold py-2 rounded-xl hover:bg-indigo-700 transition"
-        >
-          Register
-        </button>
+        <div className="text-sm text-slate-400">
+          <label className="block mb-2">Year of Admission</label>
+          <select
+            name="yearStart"
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10 mt-1"
+            value={formData.yearStart}
+            onChange={handleChange}
+          >
+            {years.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="py-3 text-sm text-slate-400">
+          <div className="mb-1">UID</div>
+          <div className="font-mono text-slate-100">{uid}</div>
+        </div>
+
+        <div className="pt-2">
+          <div className="w-full">
+            <Buttonv2 text="Register" type="submit" variant="green" />
+          </div>
+        </div>
       </form>
     </div>
   );

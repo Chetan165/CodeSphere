@@ -31,12 +31,13 @@ export default function Dashboard() {
           <img src={`${User?.photos[0].value}`} />
         </div>
         <p className="text-gray-600 mt-3 text-lg">
-          Access contests, view leaderboards, and more.
+          Dashboard & Statistics, coming soon...! Click on Contest to start
+          solving challenges!
         </p>
       </header>
 
       <footer className="mt-16 text-sm text-gray-400">
-        Coding Platform by Chetan Sharma
+        CodeSphere &copy; 2026. NO RIGHTS RESERVED.
       </footer>
     </div>
   ) : (

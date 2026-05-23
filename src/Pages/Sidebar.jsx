@@ -86,26 +86,41 @@ export function SidebarDemo({ children }) {
       },
     ];
   }
-  links.push({
-    label: "Logout",
-    href: "/Logout",
-    icon: (
-      <IconArrowLeft className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
-    ),
-  });
   const avatarSrc = userData?.photos?.[0]?.value || null;
   if (loadingUser) {
     return (
       <div className="flex w-screen h-screen overflow-hidden bg-black">
         <Sidebar open={open} setOpen={setOpen}>
           <SidebarBody className="justify-between gap-10 h-full">
-            <div className="flex flex-1 flex-col overflow-x-hidden">
-              <div className="mt-8 flex flex-col gap-2">Loading...</div>
+            <div className="flex flex-1 flex-col overflow-x-hidden p-4">
+              <div className="flex items-center space-x-3">
+                <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-neutral-300 dark:bg-neutral-700 animate-pulse" />
+                <div className="h-4 w-24 bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse" />
+              </div>
+              <div className="mt-6 space-y-3">
+                {[...Array(6)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-4 w-3/4 bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="h-7 w-7 rounded-full bg-neutral-300 dark:bg-neutral-700 animate-pulse" />
             </div>
           </SidebarBody>
         </Sidebar>
-        <main className="flex flex-col flex-1 w-full h-full overflow-y-auto">
-          {children}
+        <main className="flex flex-col flex-1 w-full h-full overflow-y-auto p-6">
+          <div className="space-y-4">
+            <div className="h-6 w-1/3 bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse" />
+            <div className="h-48 w-full bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse" />
+            <div className="grid grid-cols-3 gap-4">
+              <div className="h-32 bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse" />
+              <div className="h-32 bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse" />
+              <div className="h-32 bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse" />
+            </div>
+          </div>
         </main>
       </div>
     );

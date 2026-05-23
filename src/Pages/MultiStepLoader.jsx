@@ -29,14 +29,14 @@ const loadingStates = [
   },
 ];
 
-export function MultiStepLoader({ States, loading, setLoading }) {
+export function MultiStepLoader({ States, loading, setLoading, duration }) {
   return (
     <div className="w-full h-[60vh] flex items-center justify-center">
       {/* Core Loader Modal */}
       <Loader
         loadingStates={States}
         loading={loading}
-        duration={1000}
+        duration={duration}
         loop={false}
       />
       {/* The buttons are for demo only, remove it in your actual code ⬇️ */}

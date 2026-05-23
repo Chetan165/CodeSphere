@@ -8,6 +8,7 @@ const Buttonv2 = ({
   step,
   ApiCall,
   loading,
+  disabled = false,
   variant = "default",
   type = "button",
 }) => {
@@ -38,7 +39,9 @@ const Buttonv2 = ({
   return (
     <button
       type={type}
+      disabled={disabled}
       onClick={async () => {
+        if (disabled) return;
         try {
           if (ApiCall) {
             await ApiCall();
@@ -50,7 +53,7 @@ const Buttonv2 = ({
           console.error("Action failed:", error);
         }
       }}
-      className="bg-slate-800 no-underline group cursor-pointer relative shadow-2xl shadow-zinc-900 rounded-full p-px text-xs font-semibold leading-6  text-white inline-block w-fit hover:scale-105 transition duration-300"
+      className={`bg-slate-800 no-underline group relative shadow-2xl shadow-zinc-900 rounded-full p-px text-xs font-semibold leading-6 text-white inline-block w-fit transition duration-300 ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
     >
       <span className="absolute inset-0 overflow-hidden rounded-full">
         <span

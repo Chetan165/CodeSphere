@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo, Suspense } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback, useImperativeHandle, Suspense } from "react";
 import { useParams } from "react-router-dom";
 import UserAuth from "./UserAuth";
 import { toast, LoaderIcon } from "react-hot-toast";
@@ -33,14 +33,85 @@ const getLanguageString = (id) => {
   }
 };
 
+const CodeEditor = React.memo(
+  React.forwardRef(function CodeEditor(
+    { languageId, boilerPlate, editorOptions },
+    ref,
+  ) {
+    const [codeBuffers, setCodeBuffers] = useState({});
+    const [activeCode, setActiveCode] = useState(
+      boilerPlate[languageId] || "",
+    );
+
+    useEffect(() => {
+      setActiveCode(codeBuffers[languageId] ?? boilerPlate[languageId] ?? "");
+    }, [languageId, boilerPlate, codeBuffers]);
+
+    const handleCodeChange = useCallback(
+      (val) => {
+        const nextValue = val ?? "";
+        setActiveCode(nextValue);
+        setCodeBuffers((prev) => ({
+          ...prev,
+          [languageId]: nextValue,
+        }));
+      },
+      [languageId],
+    );
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        getCode: (langId = languageId) =>
+          codeBuffers[langId] ?? boilerPlate[langId] ?? "",
+      }),
+      [codeBuffers, boilerPlate, languageId],
+    );
+
+    return (
+      <Editor
+        height="100%"
+        theme="vs-dark"
+        language={getLanguageString(languageId)}
+        value={activeCode}
+        onChange={handleCodeChange}
+        options={editorOptions}
+      />
+    );
+  }),
+);
+
 const SolvePage = () => {
   const { ContestId: constid, id } = useParams();
+  const BoilerPlate = useMemo(
+  () => ({
+    54: `#include <iostream>
+
+using namespace std;
+
+int main() {
+  // Your code goes here
+
+  return 0;
+}`,
+    62: `import java.util.*;
+
+public class Main {
+  public static void main(String[] args) {
+    // Your code goes here
+
+  }
+}`,
+    71: `# Your code goes here
+`,
+  }),
+    [],
+  );
 
   // State Management
   const [showResult, setShowResult] = useState(false);
   const [loading, setloading] = useState(false);
   const [User, setUser] = useState();
-  const [Code, SetCode] = useState("// Write your solution here...");
   const [languageId, setLanguageId] = useState(54);
   const [submissionResult, SetsubmissionResult] = useState(null);
   const [decodedError, setDecodedError] = useState(null);
@@ -51,11 +122,29 @@ const SolvePage = () => {
   const [runError, setRunError] = useState("");
   const [contestMeta, setContestMeta] = useState(null);
   const [serverOffset, setServerOffset] = useState(0);
+  const [actionLock, setActionLock] = useState(null);
   const serverOffsetRef = useRef(serverOffset);
+  const editorRef = useRef(null);
+  const editorOptions = useMemo(
+    () => ({
+      minimap: { enabled: false },
+      fontSize: 15,
+      fontFamily: '"JetBrains Mono", "Fira Code", monospace',
+      lineHeight: 24,
+      scrollBeyondLastLine: false,
+      automaticLayout: true,
+      padding: { top: 16, bottom: 16 },
+      smoothScrolling: true,
+      cursorBlinking: "smooth",
+      renderLineHighlight: "all",
+    }),
+    [],
+  );
 
   useEffect(() => {
     serverOffsetRef.current = serverOffset;
   }, [serverOffset]);
+
   // Challenge details will be fetched from backend on mount
   const [ChallengeDetails, setChallengeDetails] = useState({
     title: "Problem Title Not Found",
@@ -153,7 +242,6 @@ const SolvePage = () => {
       </div>
     );
   }
-
   // Fetch full challenge details when mounting (authoritative)
   useEffect(() => {
     let mounted = true;
@@ -187,33 +275,38 @@ const SolvePage = () => {
   }, [id, constid]);
 
   const Submit = async () => {
-    // Client-side guard: prevent submission outside contest window
-    if (constid && contestMeta) {
-      const start = new Date(contestMeta.startTime).getTime();
-      const end = new Date(contestMeta.endTime).getTime();
-      const now = Date.now() + serverOffsetRef.current;
-      if (now < start) {
-        toast.error("Contest not started");
-        return;
-      }
-      if (now > end) {
-        toast.error("Contest ended");
-        return;
-      }
-    }
-
-    if (!Code || Code.trim() === "") {
-      toast.error("Code cannot be empty");
-      return;
-    }
-
+    if (actionLock) return;
+    setActionLock("submit");
     try {
+      const currentCode =
+        editorRef.current?.getCode(languageId) ?? BoilerPlate[languageId] ?? "";
+
+      // Client-side guard: prevent submission outside contest window
+      if (constid && contestMeta) {
+        const start = new Date(contestMeta.startTime).getTime();
+        const end = new Date(contestMeta.endTime).getTime();
+            const now = Date.now() + serverOffsetRef.current;
+            if (now < start) {
+              toast.error("Contest not started");
+              return;
+            }
+            if (now > end) {
+              toast.error("Contest ended");
+              return;
+            }
+      }
+
+      if (!currentCode || currentCode.trim() === "") {
+        toast.error("Code cannot be empty");
+        return;
+      }
+
       setShowResult(true);
       setloading(true);
       setDecodedError(null);
 
       const submissionPayload = {
-        Code,
+        Code: currentCode,
         problemId: id,
         ContestId: constid,
         languageId: parseInt(languageId),
@@ -320,7 +413,9 @@ const SolvePage = () => {
                 },
               }),
             );
-          } catch (e) {}
+          } catch (e) {
+            console.warn("Failed to dispatch challenge update", e);
+          }
         }
       } catch (e) {
         console.warn("Failed to derive updated score/status", e);
@@ -335,37 +430,43 @@ const SolvePage = () => {
       setShowResult(false);
     } finally {
       setloading(false);
+      setActionLock(null);
     }
   };
 
   const Run = async () => {
-    // Client-side guard: prevent runs when contest window disallows it
-    if (constid && contestMeta) {
-      const start = new Date(contestMeta.startTime).getTime();
-      const end = new Date(contestMeta.endTime).getTime();
-      const now = Date.now() + serverOffsetRef.current;
-      if (now < start) {
-        toast.error("Contest not started");
-        return;
-      }
-      if (now > end) {
-        toast.error("Contest ended");
-        return;
-      }
-    }
-
-    if (!Code || Code.trim() === "") {
-      toast.error("Code cannot be empty");
-      return;
-    }
-
+    if (actionLock) return;
+    setActionLock("run");
     try {
+      const currentCode =
+        editorRef.current?.getCode(languageId) ?? BoilerPlate[languageId] ?? "";
+
+      // Client-side guard: prevent runs when contest window disallows it
+      if (constid && contestMeta) {
+        const start = new Date(contestMeta.startTime).getTime();
+        const end = new Date(contestMeta.endTime).getTime();
+        const now = Date.now() + serverOffsetRef.current;
+        if (now < start) {
+          toast.error("Contest not started");
+          return;
+        }
+        if (now > end) {
+          toast.error("Contest ended");
+          return;
+        }
+      }
+
+      if (!currentCode || currentCode.trim() === "") {
+        toast.error("Code cannot be empty");
+        return;
+      }
+
       setRunLoading(true);
       setRunError("");
       setRunResult(null);
 
       const runPayload = {
-        Code,
+        Code: currentCode,
         languageId: parseInt(languageId),
         stdin: useCustomStdin ? runStdin : ChallengeDetails?.sampleInput || "",
       };
@@ -399,6 +500,7 @@ const SolvePage = () => {
       toast.error(message);
     } finally {
       setRunLoading(false);
+      setActionLock(null);
     }
   };
 
@@ -435,9 +537,8 @@ const SolvePage = () => {
   })();
 
   const explanation = ChallengeDetails?.explanation || "";
-  const solution = ChallengeDetails?.solution || "";
 
-  const buildCombined = () => {
+  const buildCombined = useCallback(() => {
     const title = ChallengeDetails?.title || "";
     const statement = ChallengeDetails?.statement || "";
     const inputFormat = ChallengeDetails?.inputFormat || "";
@@ -480,13 +581,10 @@ const SolvePage = () => {
       explanation,
       "",
     ].join("\n");
-  };
+  }, [ChallengeDetails, explanation]);
 
   // Memoize combined markdown so it's not rebuilt on every render
-  const combinedMarkdown = useMemo(
-    () => buildCombined(),
-    [ChallengeDetails, explanation, solution],
-  );
+  const combinedMarkdown = useMemo(() => buildCombined(), [buildCombined]);
 
   // Memoized markdown area to avoid re-renders unless content changes
   const MarkdownArea = React.memo(
@@ -565,14 +663,14 @@ const SolvePage = () => {
             <div className="flex items-center gap-3 mt-1">
               {ChallengeDetails.status && (
                 <span
-                  className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                  className={`text-xs font-semibold px-2 py-1 rounded-full border bg-zinc-950/70 ${
                     ChallengeDetails.status.toLowerCase().includes("solved")
-                      ? "bg-emerald-800 text-emerald-200"
+                      ? "border-emerald-500/30 text-emerald-200"
                       : ChallengeDetails.status
                             .toLowerCase()
                             .includes("partial")
-                        ? "bg-yellow-800 text-yellow-200"
-                        : "bg-rose-800 text-rose-200"
+                        ? "border-amber-500/30 text-amber-200"
+                        : "border-rose-500/30 text-rose-200"
                   }`}
                 >
                   {ChallengeDetails.status}
@@ -617,6 +715,9 @@ const SolvePage = () => {
               ApiCall={async () => await Run()}
               funct={() => {}}
               loading={runLoading}
+              disabled={
+                loading || actionLock === "submit" || actionLock === "run"
+              }
               variant="blue"
             />
 
@@ -625,6 +726,9 @@ const SolvePage = () => {
               ApiCall={async () => await Submit()}
               funct={() => {}}
               loading={loading}
+              disabled={
+                runLoading || actionLock === "run" || actionLock === "submit"
+              }
               variant="green"
             />
           </div>
@@ -653,29 +757,16 @@ const SolvePage = () => {
           {/* removed filename header to let editor blend seamlessly */}
 
           <div className="flex-1 relative min-h-0">
-            <Editor
-              height="100%"
-              theme="vs-dark"
-              language={getLanguageString(languageId)}
-              value={Code}
-              onChange={(val) => SetCode(val)}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 15,
-                fontFamily: '"JetBrains Mono", "Fira Code", monospace', // Better coding font
-                lineHeight: 24,
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                padding: { top: 16, bottom: 16 },
-                smoothScrolling: true,
-                cursorBlinking: "smooth",
-                renderLineHighlight: "all",
-              }}
+            <CodeEditor
+              ref={editorRef}
+              languageId={languageId}
+              boilerPlate={BoilerPlate}
+              editorOptions={editorOptions}
             />
           </div>
 
           {/* Compact run section at the bottom of the IDE panel */}
-          <div className="h-72 border-t border-zinc-800 bg-[#0b0b0d] px-0 py-0 flex flex-col gap-0">
+          <div className="h-72 border-t border-zinc-800 bg-zinc-900/80 px-0 py-0 flex flex-col gap-0">
             <div className="flex items-center justify-between px-3 py-2">
               <p className="text-[12px] uppercase tracking-wider text-slate-300 font-semibold">
                 Sample Input
@@ -686,8 +777,8 @@ const SolvePage = () => {
                     <span
                       className={`text-xs font-semibold ${
                         runVerdict === "Accepted"
-                          ? "text-green-400"
-                          : "text-red-400"
+                          ? "text-emerald-400"
+                          : "text-rose-400"
                       }`}
                     >
                       {runVerdict}
@@ -704,7 +795,7 @@ const SolvePage = () => {
             <label className="flex items-center gap-2 text-[12px] text-slate-300 px-3">
               <input
                 type="checkbox"
-                className="accent-sky-500"
+                className="accent-zinc-300"
                 checked={useCustomStdin}
                 onChange={(e) => setUseCustomStdin(e.target.checked)}
               />
@@ -712,7 +803,7 @@ const SolvePage = () => {
             </label>
 
             <textarea
-              className="h-20 w-full resize-none rounded-none border-0 bg-[#050506] px-4 py-3 text-xs text-slate-200 placeholder:text-zinc-500 outline-none focus:border-sky-500 disabled:opacity-60"
+              className="h-20 w-full resize-none rounded-none border-0 bg-zinc-950/40 px-4 py-3 text-xs text-slate-200 placeholder:text-zinc-500 outline-none focus:border-white/10 disabled:opacity-60"
               placeholder={
                 useCustomStdin
                   ? "Type custom stdin (multiline supported)"
@@ -731,7 +822,7 @@ const SolvePage = () => {
               </p>
             </div>
 
-            <div className="flex-1 rounded-none border-0 bg-[#050506] px-4 py-3 overflow-auto">
+            <div className="flex-1 rounded-none border-0 bg-zinc-950/40 px-4 py-3 overflow-auto">
               {runLoading ? (
                 <p className="text-xs text-slate-400">Running...</p>
               ) : runError ? (
@@ -757,9 +848,9 @@ const SolvePage = () => {
       <Dialog.Root open={showResult} onOpenChange={setShowResult}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] duration-300" />
-          <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[92vw] max-w-3xl bg-zinc-900/90 rounded-2xl shadow-2xl p-0 z-[210] overflow-hidden outline-none border border-white/10 ring-1 ring-white/5">
-            <div className="px-6 py-2 flex items-center gap-3 border-b border-zinc-800">
-              <Dialog.Title className="text-sm font-medium text-slate-100">
+          <Dialog.Content className="fixed top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[92vw] max-w-3xl bg-zinc-900/80 text-white rounded-3xl shadow-[0_14px_34px_rgba(0,0,0,0.38)] p-0 z-[210] overflow-hidden outline-none border border-white/10">
+            <div className="px-6 py-3 flex items-center gap-3 border-b border-white/10 bg-zinc-900/92">
+              <Dialog.Title className="text-sm font-medium text-slate-200">
                 Result
               </Dialog.Title>
               {submissionResult && (
@@ -768,7 +859,7 @@ const SolvePage = () => {
                 >
                   {submissionResult.verdict}
                   {submissionResult.score !== undefined && (
-                    <span className="text-xs text-slate-400 ml-2">
+                    <span className="text-xs text-slate-400 ml-2 font-normal">
                       • {submissionResult.score}/
                       {submissionResult.maxScore ?? 100}
                     </span>
@@ -777,7 +868,7 @@ const SolvePage = () => {
               )}
               <div className="ml-auto">
                 <Dialog.Close asChild>
-                  <button className="text-slate-300 hover:text-white transition-colors bg-transparent rounded p-1">
+                  <button className="text-slate-400 hover:text-white transition-colors bg-transparent rounded p-1">
                     <XCircle className="w-5 h-5" />
                   </button>
                 </Dialog.Close>
@@ -788,7 +879,7 @@ const SolvePage = () => {
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-16 space-y-4">
                   <div className="relative">
-                    <div className="w-12 h-12 border-4 border-zinc-700 border-t-sky-500 rounded-full animate-spin"></div>
+                    <div className="w-12 h-12 border-4 border-zinc-800 border-t-zinc-200 rounded-full animate-spin"></div>
                   </div>
                   <p className="text-slate-300 font-medium">
                     Evaluating your code...
@@ -796,9 +887,9 @@ const SolvePage = () => {
                 </div>
               ) : submissionResult ? (
                 <div className="space-y-4">
-                  <div className="px-3 py-2 rounded-md border border-white/5 bg-zinc-900/70 flex items-center">
+                  <div className="px-3 py-2 rounded-2xl border border-white/10 bg-zinc-900/92 shadow-[0_10px_24px_rgba(0,0,0,0.28)] flex items-center">
                     <span
-                      className={`text-sm font-medium ${submissionResult.verdict === "Accepted" ? "text-emerald-300" : "text-rose-300"}`}
+                      className={`text-sm font-medium ${submissionResult.verdict === "Accepted" ? "text-emerald-400" : "text-rose-400"}`}
                     >
                       {submissionResult.verdict}
                     </span>
@@ -827,12 +918,12 @@ const SolvePage = () => {
                             .toLowerCase()
                             .includes("accepted");
                           const colorClass = passed
-                            ? "text-emerald-300"
-                            : "text-rose-300";
+                            ? "text-emerald-400"
+                            : "text-rose-400";
                           return (
                             <div
                               key={i}
-                              className="p-2 rounded-md border border-zinc-800 bg-zinc-900/60"
+                              className="p-3 rounded-2xl border border-white/10 bg-zinc-900/92 shadow-[0_10px_24px_rgba(0,0,0,0.22)]"
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
