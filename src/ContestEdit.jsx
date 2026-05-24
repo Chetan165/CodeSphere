@@ -294,10 +294,6 @@ export default function ContestEdit() {
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             Edit Contest
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-            The editing surface now matches the contest list: more breathing
-            room, clearer grouping, and less visual pressure.
-          </p>
         </header>
 
         <div className="flex h-14 w-full flex-nowrap items-stretch gap-2 overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-2 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl">
