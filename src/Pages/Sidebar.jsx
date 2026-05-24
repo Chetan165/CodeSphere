@@ -89,7 +89,7 @@ export function SidebarDemo({ children }) {
   const avatarSrc = userData?.photos?.[0]?.value || null;
   if (loadingUser) {
     return (
-      <div className="flex w-screen h-screen overflow-hidden bg-black">
+      <div className="relative flex w-screen h-screen overflow-hidden bg-black">
         <Sidebar open={open} setOpen={setOpen}>
           <SidebarBody className="justify-between gap-10 h-full">
             <div className="flex flex-1 flex-col overflow-x-hidden p-4">
@@ -111,7 +111,7 @@ export function SidebarDemo({ children }) {
             </div>
           </SidebarBody>
         </Sidebar>
-        <main className="flex flex-col flex-1 w-full h-full overflow-y-auto p-6">
+        <main className="flex flex-col flex-1 w-full h-full overflow-y-auto pl-[60px] md:pl-[60px] p-6">
           <div className="space-y-4">
             <div className="h-6 w-1/3 bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse" />
             <div className="h-48 w-full bg-neutral-300 dark:bg-neutral-700 rounded animate-pulse" />
@@ -126,11 +126,13 @@ export function SidebarDemo({ children }) {
     );
   }
   return (
-    <div className={cn("flex w-screen h-screen overflow-hidden bg-black")}>
+    <div
+      className={cn("relative flex w-screen h-screen overflow-hidden bg-black")}
+    >
       <Sidebar open={open} setOpen={setOpen}>
         <SidebarBody className="justify-between gap-10 h-full">
           <div className="flex flex-1 flex-col overflow-x-hidden">
-            {open ? <Logo /> : <LogoIcon />}
+            <Logo open={open} />
             <div className="mt-8 flex flex-col gap-2">
               {links.map((link, idx) => (
                 <SidebarLink key={idx} link={link} />
@@ -159,20 +161,25 @@ export function SidebarDemo({ children }) {
           </div>
         </SidebarBody>
       </Sidebar>
-      <main className="flex flex-col flex-1 w-full h-full overflow-y-auto">
+      <main className="flex flex-col flex-1 w-full h-full overflow-y-auto pl-[60px] md:pl-[60px]">
         {children}
       </main>
     </div>
   );
 }
-export const Logo = () => {
+export const Logo = ({ open }) => {
   return (
     <Link
       to="/"
-      className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black"
+      className="relative z-20 flex items-center gap-2 overflow-hidden py-1 text-sm font-normal text-black dark:text-white"
     >
       <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-black dark:bg-white" />
-      <span className="font-medium whitespace-pre text-black dark:text-white">
+      <span
+        className={cn(
+          "font-medium whitespace-pre transition-all duration-150",
+          open ? "opacity-100" : "opacity-0 group-hover/sidebar:opacity-100",
+        )}
+      >
         CodeSphere
       </span>
     </Link>

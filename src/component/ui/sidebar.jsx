@@ -2,12 +2,11 @@
 import { cn } from "../../utils/cn";
 import React, { useState, createContext, useContext } from "react";
 import { NavLink, Link } from "react-router-dom";
-import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
 
 const SidebarContext = createContext(undefined);
 
-export const useSidebar = () => {
+const useSidebar = () => {
   const context = useContext(SidebarContext);
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider");
@@ -51,23 +50,17 @@ export const SidebarBody = (props) => {
 };
 
 export const DesktopSidebar = ({ className, children, ...props }) => {
-  const { open, setOpen, animate } = useSidebar();
   return (
     <>
-      <motion.div
+      <div
         className={cn(
-          "h-screen px-4 py-4 hidden md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[300px] shrink-0 z-30 border-r border-neutral-200 dark:border-neutral-700",
+          "group/sidebar fixed left-0 top-0 hidden h-screen w-[60px] overflow-hidden border-r border-neutral-200 bg-neutral-100 px-4 py-4 transition-[width] duration-300 ease-out will-change-[width] hover:delay-75 dark:border-neutral-700 dark:bg-neutral-800 md:flex md:flex-col hover:w-[300px] z-30",
           className,
         )}
-        animate={{
-          width: animate ? (open ? "300px" : "60px") : "300px",
-        }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
         {...props}
       >
         {children}
-      </motion.div>
+      </div>
     </>
   );
 };
@@ -88,65 +81,61 @@ export const MobileSidebar = ({ className, children, ...props }) => {
             onClick={() => setOpen(!open)}
           />
         </div>
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ x: "-100%", opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: "-100%", opacity: 0 }}
-              transition={{
-                duration: 0.3,
-                ease: "easeInOut",
-              }}
-              className={cn(
-                "fixed h-screen w-full inset-0 bg-white dark:bg-neutral-900 p-10 z-[100] flex flex-col justify-between border-r border-neutral-200 dark:border-neutral-700",
-                className,
-              )}
+        {open && (
+          <div
+            className={cn(
+              "fixed inset-0 z-[100] flex h-screen w-full flex-col justify-between border-r border-neutral-200 bg-white p-10 dark:border-neutral-700 dark:bg-neutral-900",
+              className,
+            )}
+          >
+            <div
+              className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200"
+              onClick={() => setOpen(!open)}
             >
-              <div
-                className="absolute right-10 top-10 z-50 text-neutral-800 dark:text-neutral-200"
-                onClick={() => setOpen(!open)}
-              >
-                <IconX />
-              </div>
-              {children}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <IconX />
+            </div>
+            {children}
+          </div>
+        )}
       </div>
     </>
   );
 };
 
 export const SidebarLink = ({ link, className, ...props }) => {
-  const { open, animate, setOpen } = useSidebar();
+  const { open, setOpen } = useSidebar();
   return (
     <NavLink
       to={link.href}
       onClick={() => {
         try {
           setOpen(false);
-        } catch (e) {}
+        } catch {
+          return;
+        }
       }}
       className={({ isActive }) =>
         cn(
-          "flex items-center justify-start gap-2  group/sidebar py-2",
+          "group/sidebar-link flex items-center justify-start gap-2 py-2 overflow-hidden",
           isActive ? "opacity-100" : "opacity-90",
           className,
         )
       }
       {...props}
     >
-      {link.icon}
-      <motion.span
-        animate={{
-          display: animate ? (open ? "inline-block" : "none") : "inline-block",
-          opacity: animate ? (open ? 1 : 0) : 1,
-        }}
-        className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+      <span className="shrink-0 transition-transform duration-200 ease-out group-hover/sidebar-link:scale-110 group-hover/sidebar-link:translate-x-0.5">
+        {link.icon}
+      </span>
+      <span
+        className={cn(
+          "whitespace-pre text-sm !p-0 !m-0 text-neutral-700 transition-all duration-200 ease-out dark:text-neutral-200",
+          open
+            ? "opacity-100 translate-x-0"
+            : "opacity-0 -translate-x-1 group-hover/sidebar:opacity-100 group-hover/sidebar:translate-x-0 group-hover/sidebar:delay-75",
+        )}
       >
         {link.label}
-      </motion.span>
+      </span>
     </NavLink>
   );
 };

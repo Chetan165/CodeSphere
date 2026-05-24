@@ -22,10 +22,10 @@ const ChallengeCard = ({
   })();
 
   return (
-    <div className="w-full max-w-2xl p-4 mb-6 rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-shadow hover:shadow-[0_14px_32px_rgba(0,0,0,0.36)] backdrop-blur-xl">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex-1">
-          <h3 className="text-lg font-medium text-white leading-snug">
+    <div className="w-full rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-shadow hover:shadow-[0_14px_32px_rgba(0,0,0,0.36)] backdrop-blur-xl md:p-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-medium leading-snug text-white md:text-xl">
             {title}
           </h3>
           <div className="text-xs text-slate-400 mt-1">ID: {id}</div>
@@ -44,7 +44,7 @@ const ChallengeCard = ({
             )}
           </div>
         </div>
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 self-start md:self-center">
           <Link to={`/contests/${Contestid}/challenges/${id}`}>
             <Buttonv2 text="Solve" ApiCall={async () => {}} funct={() => {}} />
           </Link>

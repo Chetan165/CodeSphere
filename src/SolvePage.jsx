@@ -1,4 +1,12 @@
-import React, { useEffect, useState, useRef, useMemo, useCallback, useImperativeHandle, Suspense } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  useImperativeHandle,
+  Suspense,
+} from "react";
 import { useParams } from "react-router-dom";
 import UserAuth from "./UserAuth";
 import { toast, LoaderIcon } from "react-hot-toast";
@@ -39,9 +47,7 @@ const CodeEditor = React.memo(
     ref,
   ) {
     const [codeBuffers, setCodeBuffers] = useState({});
-    const [activeCode, setActiveCode] = useState(
-      boilerPlate[languageId] || "",
-    );
+    const [activeCode, setActiveCode] = useState(boilerPlate[languageId] || "");
 
     useEffect(() => {
       setActiveCode(codeBuffers[languageId] ?? boilerPlate[languageId] ?? "");
@@ -84,8 +90,8 @@ const CodeEditor = React.memo(
 const SolvePage = () => {
   const { ContestId: constid, id } = useParams();
   const BoilerPlate = useMemo(
-  () => ({
-    54: `#include <iostream>
+    () => ({
+      54: `#include <iostream>
 
 using namespace std;
 
@@ -94,7 +100,7 @@ int main() {
 
   return 0;
 }`,
-    62: `import java.util.*;
+      62: `import java.util.*;
 
 public class Main {
   public static void main(String[] args) {
@@ -102,9 +108,9 @@ public class Main {
 
   }
 }`,
-    71: `# Your code goes here
+      71: `# Your code goes here
 `,
-  }),
+    }),
     [],
   );
 
@@ -285,15 +291,15 @@ public class Main {
       if (constid && contestMeta) {
         const start = new Date(contestMeta.startTime).getTime();
         const end = new Date(contestMeta.endTime).getTime();
-            const now = Date.now() + serverOffsetRef.current;
-            if (now < start) {
-              toast.error("Contest not started");
-              return;
-            }
-            if (now > end) {
-              toast.error("Contest ended");
-              return;
-            }
+        const now = Date.now() + serverOffsetRef.current;
+        if (now < start) {
+          toast.error("Contest not started");
+          return;
+        }
+        if (now > end) {
+          toast.error("Contest ended");
+          return;
+        }
       }
 
       if (!currentCode || currentCode.trim() === "") {
@@ -512,6 +518,11 @@ public class Main {
       // remove trailing blank lines
       .replace(/\n+$/g, "")
       .trim();
+
+  const formatOutput = (value) =>
+    String(value || "")
+      .replace(/\r\n/g, "\n")
+      .replace(/\n+$/g, "");
 
   const runVerdict = (() => {
     if (!runResult) return null;
@@ -830,14 +841,52 @@ public class Main {
                   {runError}
                 </pre>
               ) : (
-                <pre className="text-xs text-slate-200 whitespace-pre-wrap font-mono w-full">
-                  {runResult
-                    ? runResult.compile_output ||
-                      runResult.stderr ||
-                      runResult.stdout ||
-                      "(no output)"
-                    : "Click Run to execute."}
-                </pre>
+                <div className="space-y-3 text-xs font-mono w-full">
+                  {runResult ? (
+                    <>
+                      {runResult.compile_output ? (
+                        <div className="space-y-1">
+                          <div className="text-slate-400 uppercase tracking-wider text-[10px]">
+                            Compile output
+                          </div>
+                          <pre className="text-amber-200 whitespace-pre-wrap">
+                            {formatOutput(runResult.compile_output)}
+                          </pre>
+                        </div>
+                      ) : null}
+
+                      {runResult.stderr ? (
+                        <div className="space-y-1">
+                          <div className="text-slate-400 uppercase tracking-wider text-[10px]">
+                            Stderr
+                          </div>
+                          <pre className="text-rose-200 whitespace-pre-wrap">
+                            {formatOutput(runResult.stderr)}
+                          </pre>
+                        </div>
+                      ) : null}
+
+                      {runResult.stdout ? (
+                        <div className="space-y-1">
+                          <div className="text-slate-400 uppercase tracking-wider text-[10px]">
+                            Stdout
+                          </div>
+                          <pre className="text-slate-200 whitespace-pre-wrap">
+                            {formatOutput(runResult.stdout)}
+                          </pre>
+                        </div>
+                      ) : null}
+
+                      {!runResult.compile_output &&
+                      !runResult.stderr &&
+                      !runResult.stdout ? (
+                        <p className="text-slate-400">(no output)</p>
+                      ) : null}
+                    </>
+                  ) : (
+                    <p className="text-slate-400">Click Run to execute.</p>
+                  )}
+                </div>
               )}
             </div>
           </div>

@@ -48,7 +48,7 @@ const pollRun = async (runId) => {
 
     if (data.status !== "pending") return data;
 
-    await delay(2000);
+    await delay(1000);
     attempts++;
   }
 

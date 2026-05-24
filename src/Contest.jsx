@@ -1,8 +1,6 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import ContestCard from "./ContestCard";
-import Contest_button from "./Contest_button";
-import Challenge_button from "./Challenge_button";
 import UserAuth from "./UserAuth";
 import Buttonv2 from "./component/ui/Buttonv2";
 
@@ -56,139 +54,165 @@ const Contest = () => {
     }
   };
 
+  const summaryCountClass =
+    "inline-flex items-center rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs font-medium text-slate-200";
+
   return User && User.uid ? (
-    <div className="w-full min-h-screen flex flex-col items-center bg-black justify-start pt-8 pb-12 px-6">
-      <div className="w-full max-w-screen-xl mb-4 flex items-center justify-between">
-        <div />
-        <Buttonv2
-          text={refreshing ? "Refreshing..." : "Refresh"}
-          ApiCall={handleRefresh}
-          variant="green"
-          className="text-xs text-slate-200 bg-transparent border border-white/10 px-3 py-1 rounded hover:bg-white/5"
-        ></Buttonv2>
-      </div>
-      {/* Upcoming (top small card - show first upcoming if any) */}
-      <section className="w-full max-w-screen-xl mb-6 p-4 rounded-2xl bg-zinc-900/70 border border-transparent shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-rose-400/90" />
-            <h3 className="text-base font-semibold uppercase tracking-wide text-slate-200">
-              Upcoming
-            </h3>
-          </div>
-          <div className="text-xs text-slate-400">Next</div>
-        </div>
-        <div className="border-t border-zinc-800 pt-3">
-          {upcoming && upcoming.length > 0 ? (
-            <div className="max-h-44 overflow-y-auto pr-2 space-y-3">
-              {upcoming.map((u) => (
-                <ContestCard
-                  key={u.id}
-                  contest={u}
-                  admin={User.admin}
-                  contests={contests}
-                  SetContests={SetContests}
-                  compact={true}
-                />
-              ))}
+    <div className="w-full min-h-screen bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.16),transparent_28%),linear-gradient(180deg,#050505_0%,#09090b_42%,#020202_100%)] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6">
+        <header className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-white/5 px-5 py-5 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                Contests
+              </h1>
             </div>
-          ) : (
-            <div className="text-xs text-slate-500">No upcoming contests</div>
-          )}
-        </div>
-      </section>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={summaryCountClass}>
+              {upcoming.length} upcoming
+            </span>
+            <span className={summaryCountClass}>{ongoing.length} live</span>
+            <span className={summaryCountClass}>{past.length} past</span>
+            <Buttonv2
+              text={refreshing ? "Refreshing..." : "Refresh"}
+              ApiCall={handleRefresh}
+              variant="green"
+              className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-200 hover:bg-white/10"
+            ></Buttonv2>
+          </div>
+        </header>
 
-      {/* Ongoing (full cards) */}
-      <section className="w-full max-w-screen-xl mb-6 p-4 rounded-2xl bg-zinc-900/70 border border-transparent shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400/90" />
-            <h3 className="text-base font-semibold uppercase tracking-wide text-slate-200">
-              Ongoing
-            </h3>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-zinc-950/70 px-2.5 py-1 text-xs font-semibold text-amber-200">
-              Live now
-            </span>
-            <span className="inline-flex items-center rounded-full border border-rose-500/30 bg-zinc-950/70 px-2.5 py-1 text-xs font-semibold text-rose-200">
-              LIVE
-            </span>
-          </div>
-        </div>
-        <div className="border-t border-zinc-800 pt-3">
-          {ongoing && ongoing.length > 0 ? (
-            <div className="max-h-96 overflow-y-auto pr-2 space-y-4">
-              {ongoing.map((item) => (
-                <ContestCard
-                  key={item.id}
-                  contest={item}
-                  admin={User.admin}
-                  contests={contests}
-                  SetContests={SetContests}
-                />
-              ))}
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(340px,0.9fr)] xl:items-start">
+          <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:p-6 xl:row-span-2">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="inline-block h-2 w-2 rounded-full bg-sky-400" />
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-200">
+                  Ongoing
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-200">
+                  Live now
+                </span>
+                <span className="inline-flex items-center rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-semibold text-rose-200">
+                  LIVE
+                </span>
+              </div>
             </div>
-          ) : (
-            <div className="text-xs text-slate-500">No ongoing contests</div>
-          )}
-        </div>
-      </section>
-
-      {/* Past contests (collapsible list of small cards) */}
-      <section className="w-full max-w-screen-xl mb-6 p-4 rounded-2xl bg-zinc-900/70 border border-transparent shadow-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400/80" />
-            <h3 className="text-base font-semibold uppercase tracking-wide text-slate-200">
-              Past Contests
-            </h3>
-          </div>
-          <button
-            onClick={() => setShowPast((s) => !s)}
-            className="flex items-center gap-2 text-sm text-slate-300 focus:outline-none"
-            aria-expanded={showPast}
-          >
-            <span className="text-xs text-slate-400">{past.length} total</span>
-            <svg
-              className={`w-4 h-4 transition-transform duration-200 ${showPast ? "rotate-180" : ""}`}
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M6 8L10 12L14 8"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-        <div className="border-t border-zinc-800 pt-3">
-          <div
-            className={`overflow-hidden transition-all duration-300 ${showPast ? "max-h-96" : "max-h-0"}`}
-          >
-            <div className="max-h-72 overflow-y-auto pr-2 space-y-2">
-              {past && past.length > 0 ? (
-                past.map((p) => (
-                  <ContestCard
-                    key={p.id}
-                    contest={p}
-                    admin={User.admin}
-                    contests={contests}
-                    SetContests={SetContests}
-                    compact={true}
-                  />
-                ))
+            <div className="border-t border-white/10 pt-4">
+              {ongoing && ongoing.length > 0 ? (
+                <div className="space-y-4">
+                  {ongoing.map((item) => (
+                    <ContestCard
+                      key={item.id}
+                      contest={item}
+                      admin={User.admin}
+                      contests={contests}
+                      SetContests={SetContests}
+                    />
+                  ))}
+                </div>
               ) : (
-                <div className="text-xs text-slate-500">No past contests</div>
+                <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-sm text-slate-400">
+                  No ongoing contests
+                </div>
               )}
             </div>
-          </div>
+          </section>
+
+          <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="inline-block h-2 w-2 rounded-full bg-rose-400" />
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-200">
+                  Upcoming
+                </h3>
+              </div>
+              <div className="text-xs text-slate-400">Next</div>
+            </div>
+            <div className="border-t border-white/10 pt-4">
+              {upcoming && upcoming.length > 0 ? (
+                <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                  {upcoming.map((u) => (
+                    <ContestCard
+                      key={u.id}
+                      contest={u}
+                      admin={User.admin}
+                      contests={contests}
+                      SetContests={SetContests}
+                      compact={true}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-sm text-slate-400">
+                  No upcoming contests
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl sm:p-6 xl:col-start-2">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="inline-block h-2 w-2 rounded-full bg-slate-400" />
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-200">
+                  Past Contests
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowPast((s) => !s)}
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-sm text-slate-300 transition-colors hover:bg-white/5 focus:outline-none"
+                aria-expanded={showPast}
+              >
+                <span className="text-xs text-slate-400">
+                  {past.length} total
+                </span>
+                <svg
+                  className={`h-4 w-4 transition-transform duration-200 ${showPast ? "rotate-180" : ""}`}
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M6 8L10 12L14 8"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div className="border-t border-white/10 pt-4">
+              <div
+                className={`overflow-hidden transition-all duration-300 ${showPast ? "max-h-[32rem]" : "max-h-0"}`}
+              >
+                <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                  {past && past.length > 0 ? (
+                    past.map((p) => (
+                      <ContestCard
+                        key={p.id}
+                        contest={p}
+                        admin={User.admin}
+                        contests={contests}
+                        SetContests={SetContests}
+                        compact={true}
+                      />
+                    ))
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-6 text-sm text-slate-400">
+                      No past contests
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
     </div>
   ) : (
     <div></div>

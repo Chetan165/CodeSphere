@@ -90,25 +90,42 @@ const ContestChallenges = () => {
     return () => window.removeEventListener("challengeUpdated", handler);
   }, []);
   return User && User.uid ? (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-black overflow-y-auto py-6">
-      <div className="w-full max-w-3xl p-6">
-        <h2 className="text-xl text-white font-semibold mb-4">
-          {contestMeta?.title || "Contest"}
-        </h2>
-        <ul>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,#050505_0%,#09090b_55%,#020202_100%)] overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
+        <header className="rounded-3xl border border-white/10 bg-white/5 px-5 py-5 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-medium uppercase tracking-[0.25em] text-cyan-300/80">
+                Contest challenges
+              </p>
+              <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+                {contestMeta?.title || "Contest"}
+              </h2>
+            </div>
+            <div className="text-sm text-slate-400">
+              {Challenges.length} challenge{Challenges.length === 1 ? "" : "s"}
+            </div>
+          </div>
+        </header>
+
+        <main className="space-y-4 pb-6">
           {Challenges.map((val) => (
-            <li key={val.id}>
-              <ChallengeCard
-                id={val.id}
-                Contestid={ContestId}
-                title={val.title}
-                userScore={val.userScore}
-                status={val.status}
-                maxScore={val.maxScore ?? val.scoreWeight ?? val.maxScore}
-              />
-            </li>
+            <ChallengeCard
+              key={val.id}
+              id={val.id}
+              Contestid={ContestId}
+              title={val.title}
+              userScore={val.userScore}
+              status={val.status}
+              maxScore={val.maxScore ?? val.scoreWeight ?? val.maxScore}
+            />
           ))}
-        </ul>
+          {Challenges.length === 0 && (
+            <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 px-5 py-8 text-sm text-slate-400 shadow-[0_18px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl">
+              No challenges are available for this contest yet.
+            </div>
+          )}
+        </main>
       </div>
     </div>
   ) : (

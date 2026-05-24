@@ -298,29 +298,31 @@ export default function ProblemCreationForm() {
   };
 
   return (
-    <div className="w-full h-full flex items-start justify-center bg-black py-8 px-2">
-      <div className="min-h-screen w-full bg-black py-10 px-4 flex flex-col gap-12">
-        <div className="flex flex-row items-start justify-around position-relative">
-          <p className="admin-heading text-4xl font-bold mb-6 text-center tracking-tight w-1/3">
-            Add New
-            <FlipWords words={words} />
-          </p>
-          <button
-            onClick={() => navigate("/admin/autocraft")}
-            className="relative inline-flex h-12 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 hover:shadow-[0_0_10px_0_rgba(139,92,246,0.7),0_0_20px_0_rgba(236,72,153,0.5)]"
-          >
-            <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
-            <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white backdrop-blur-3xl">
-              AutoCraft <IconSparkles className="mx-1a" />
-            </span>
-          </button>
-        </div>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_28%),linear-gradient(180deg,#050505_0%,#09090b_45%,#020202_100%)] px-4 py-6 sm:px-6 lg:px-8 text-slate-200">
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-6">
+        <header className="rounded-3xl border border-white/10 bg-white/5 px-6 py-6 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <p className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              Add New <FlipWords words={words} />
+            </p>
+            <button
+              onClick={() => navigate("/admin/autocraft")}
+              className="relative inline-flex h-12 overflow-hidden rounded-full p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 hover:shadow-[0_0_10px_0_rgba(139,92,246,0.7),0_0_20px_0_rgba(236,72,153,0.5)]"
+            >
+              <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
+              <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-slate-950 px-3 py-1 text-sm font-medium text-white backdrop-blur-3xl">
+                AutoCraft <IconSparkles className="mx-1a" />
+              </span>
+            </button>
+          </div>
+        </header>
+
         <form
           onSubmit={handleSubmit}
-          className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8"
+          className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 xl:grid-cols-2"
         >
-          <div className="rounded-3xl p-px bg-[linear-gradient(135deg,#071226_0%,#0b0b0d_100%)] shadow-xl">
-            <div className="bg-zinc-900/90 rounded-2xl p-6 relative overflow-hidden border border-zinc-800 backdrop-blur-sm h-full">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+            <div className="h-full space-y-4">
               <Label className="text-white mb-2">Title</Label>
               <Input
                 name="title"
@@ -377,8 +379,8 @@ export default function ProblemCreationForm() {
             </div>
           </div>
 
-          <div className="rounded-3xl p-px bg-[linear-gradient(135deg,#071226_0%,#0b0b0d_100%)] shadow-xl">
-            <div className="bg-zinc-900/90 rounded-2xl p-6 relative overflow-hidden border border-zinc-800 backdrop-blur-sm h-full flex flex-col">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+            <div className="h-full flex flex-col gap-6">
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1">
                   <Label className="text-white mb-2">Sample Input</Label>

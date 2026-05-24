@@ -44,13 +44,12 @@ const steps = [
       "Choose topics, difficulty, and (optionally) complexity/solution.",
   },
   {
-    title: "AI Generation",
-    description: "AI generates problem, statement, constraints, and testcases.",
+    title: "Testcase Generation",
+    description: "Multi Step AI pipeline for generating optimal testcases.",
   },
   {
     title: "CE & Export",
-    description:
-      "Run code, validate testcases, and download everything as a zip.",
+    description: "Run Generated Script and download everything as a zip.",
   },
 ];
 
@@ -59,7 +58,7 @@ const AutoCraft = () => {
   const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [difficulty, setDifficulty] = useState("Easy");
-  const [complexity, setComplexity] = useState(null);
+  const [complexity, _setComplexity] = useState(null);
   const [Step1Data, SetStep1Data] = useState(null);
   const [Step2Data, SetStep2Data] = useState(null);
   const [loading, setloading] = useState(false);
@@ -67,6 +66,7 @@ const AutoCraft = () => {
   const [buttonLoading, setButtonLoading] = useState(false);
   const [questionStyle, setQuestionStyle] = useState("LeetCode");
   const [additionalContext, setAdditionalContext] = useState("");
+  const isBusy = loading || buttonLoading;
 
   const DownloadFile = async () => {
     try {
@@ -309,17 +309,20 @@ const AutoCraft = () => {
                 funct={setCurrentStep}
                 step={1}
                 text="Next"
+                loading={loading}
+                disabled={loading}
               />
             </div>
           )}
           {currentStep === 1 && (
             <div className="flex flex-col w-full">
               <h2 className="text-2xl font-bold mb-4 text-white">
-                Step 2: AI Generation
+                Step 2: Testcase Generation
               </h2>
               <p className="text-slate-400 text-base mb-8">
-                (AI-generated problem, statement, constraints, and testcases
-                preview UI goes here.)
+                Multi-Step Reasoning AI pipeline is used to generate optimal
+                testcase scripts based on the problem details. Covering all edge
+                cases and constraints to ensure a robust problem.
               </p>
               {/* Number of Testcases Dropdown */}
 
@@ -328,6 +331,8 @@ const AutoCraft = () => {
                 funct={setCurrentStep}
                 step={2}
                 text="Accept & Next"
+                loading={loading}
+                disabled={loading}
               />
               {/* <button className="p-[3px] relative w-fit mt-4">
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg" />
@@ -344,14 +349,16 @@ const AutoCraft = () => {
               </h2>
               {/* TODO: Add CE pipeline integration, live updates, and download UI here */}
               <p className="text-slate-400 text-base mb-8">
-                (Live CE pipeline updates and download zip UI goes here.)
+                Code Execution Engine runs the generated testcase scripts and
+                packages everything into a zip file for download.
               </p>
               <Buttonv2
-                text={`${done ? "Donwload Zip" : "Run CE"}`}
+                text={`${done ? "Download Zip" : "Run CE"}`}
                 funct={setCurrentStep}
                 step={2}
                 ApiCall={done ? DownloadFile : CEAndDownload}
                 loading={buttonLoading}
+                disabled={isBusy}
                 loadHandler={setButtonLoading}
               />
             </div>
@@ -359,38 +366,42 @@ const AutoCraft = () => {
         </BackgroundGradient>
         {/* Placeholder for future preview, AI, or CE output, or just a clean empty card for now */}
         <div
-          className={`bg-transparent rounded-2xl shadow-xl p-8 min-h-[420px] border border-white/10 flex flex-col items-center ${loading ? "justify-center" : "justify-start"} overflow-scroll max-h-[720px]`}
+          className={`rounded-2xl border border-white/10 bg-neutral-950/70 shadow-[0_0_40px_rgba(15,23,42,0.35)] backdrop-blur-md p-6 min-h-[420px] flex flex-col ${loading ? "justify-center overflow-hidden" : "justify-start overflow-hidden"}`}
         >
           {/* You can add a preview, live output, or illustration here in the future */}
-          <div className="w-full h-full">
+          <div
+            className={`w-full h-full ${loading ? "overflow-hidden" : "overflow-y-auto pr-1"}`}
+          >
             {loading ? (
-              <AILoader
-                steps={
-                  currentStep === 0
-                    ? [
-                        "Generating with AI...",
-                        "Designing a creative coding problem...",
-                        "Selecting optimal constraints and samples...",
-                        "Finalizing problem details for you...",
-                      ]
-                    : currentStep === 1
+              <div className="flex h-full items-center justify-center px-2 py-6">
+                <AILoader
+                  steps={
+                    currentStep === 0
                       ? [
-                          "Generating testcases...",
-                          "Validating testcases...",
-                          "Preparing everything for CE...",
-                          "Almost done...",
+                          "Generating with AI...",
+                          "Designing a creative coding problem...",
+                          "Selecting optimal constraints and samples...",
+                          "Finalizing problem details..",
                         ]
-                      : [
-                          "Running code execution engine...",
-                          "Validating testcases against solution...",
-                          "Packaging files for download...",
-                          "Finalizing your coding problem...",
-                        ]
-                }
-                interval={1500}
-              />
+                      : currentStep === 1
+                        ? [
+                            "Generating testcases...",
+                            "Validating testcases...",
+                            "Preparing everything for CE...",
+                            "Almost done...",
+                          ]
+                        : [
+                            "Running code execution engine...",
+                            "Validating testcases against solution...",
+                            "Packaging files for download...",
+                            "Finalizing your coding problem...",
+                          ]
+                  }
+                  interval={1500}
+                />
+              </div>
             ) : (
-              <div className="p-2 bg-transparent">
+              <div className="p-1 bg-transparent">
                 <HoverEffect
                   items={[
                     {

@@ -241,7 +241,7 @@ const ContestCard = ({
                 <div className="flex items-center gap-2">
                   <div className="flex-shrink-0">
                     <Buttonv2
-                      text="Edit"
+                      text="Manage"
                       ApiCall={async () => {
                         navigate(`/contests/${id}/edit`);
                       }}
@@ -363,7 +363,7 @@ const ContestCard = ({
               {admin && (
                 <div className="flex-shrink-0">
                   <Buttonv2
-                    text="Edit"
+                    text="Manage"
                     ApiCall={async () => {
                       navigate(`/contests/${id}/edit`);
                     }}
