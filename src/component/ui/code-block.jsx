@@ -34,8 +34,9 @@ export const CodeBlock = ({
     : highlightLines;
 
   return (
-    <div className="relative w-full rounded-lg bg-slate-900 p-4 font-mono text-sm">
-      <div className="flex flex-col gap-2">
+    <div className="relative w-full overflow-hidden rounded-2xl border border-cyan-400/10 bg-zinc-950/55 p-4 font-mono text-sm text-slate-100 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(56,189,248,0.09),transparent_35%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_30%)]" />
+      <div className="relative flex flex-col gap-2">
         {tabsExist && (
           <div className="flex  overflow-x-auto">
             {tabs.map((tab, index) => (

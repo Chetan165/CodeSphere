@@ -66,7 +66,7 @@ export default function ContestCreationForm() {
   }, [search]);
 
   useEffect(() => {
-    UserAuth(setUser);
+    UserAuth(setUser, true);
   }, []);
   const [form, setForm] = useState({
     title: "",
@@ -246,58 +246,56 @@ export default function ContestCreationForm() {
                 </div>
               </div>
               {/* Display selected problems */}
-              <div className="w-full mb-6 rounded-3xl p-px bg-[linear-gradient(135deg,#071226_0%,#0b0b0d_100%)] shadow-xl">
-                <div className="bg-zinc-900/90 rounded-2xl p-6 relative overflow-hidden border border-zinc-800 backdrop-blur-sm">
-                  <h3 className="text-lg font-semibold mb-3 text-white">
-                    Selected Challenges
-                  </h3>
-                  {chosenProblems?.length === 0 ? (
-                    <p className="text-zinc-400">No Challenges selected yet.</p>
-                  ) : (
-                    <div className="max-h-72 overflow-scroll pr-2">
-                      <div className="flex flex-col">
-                        {chosenProblems?.map((problem) => (
-                          <div
-                            key={problem.id}
-                            className="w-full p-4 mb-4 rounded-2xl shadow-md bg-gradient-to-tr from-zinc-900/80 to-zinc-800/60 ring-1 ring-blue-600/10 border border-zinc-800 flex items-center justify-between transition-shadow hover:shadow-lg"
-                          >
-                            <div className="flex-1">
-                              <div className="text-base font-semibold text-white truncate">
-                                {problem.title}
+              <div className="w-full rounded-3xl border border-white/10 bg-white/5 p-6 shadow-[0_18px_50px_rgba(0,0,0,0.24)] backdrop-blur-xl">
+                <h3 className="text-lg font-semibold mb-3 text-white">
+                  Selected Challenges
+                </h3>
+                {chosenProblems?.length === 0 ? (
+                  <p className="text-zinc-400">No Challenges selected yet.</p>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto overflow-x-hidden pr-2 scrollbar-thin scrollbar-thumb-zinc-700">
+                    <div className="flex flex-col gap-4">
+                      {chosenProblems?.map((problem) => (
+                        <div
+                          key={problem.id}
+                          className="w-full p-4 mb-4 rounded-2xl shadow-md bg-gradient-to-tr from-zinc-900/80 to-zinc-800/60 ring-1 ring-blue-600/10 border border-zinc-800 flex items-center justify-between transition-shadow hover:shadow-lg"
+                        >
+                          <div className="flex-1">
+                            <div className="text-base font-semibold text-white truncate">
+                              {problem.title}
+                            </div>
+                            {problem.shortDescription ? (
+                              <div className="text-sm text-slate-400 mt-1 whitespace-normal break-words">
+                                {problem.shortDescription}
                               </div>
-                              {problem.shortDescription ? (
-                                <div className="text-sm text-slate-400 mt-1 truncate">
-                                  {problem.shortDescription}
-                                </div>
-                              ) : null}
-                            </div>
-                            <div className="ml-4 flex-shrink-0">
-                              <button
-                                onClick={() =>
-                                  SetChosenProblems(
-                                    chosenProblems.filter(
-                                      (p) => p.id !== problem.id,
-                                    ),
-                                  )
-                                }
-                                aria-label="Remove problem"
-                                className="w-8 h-8 flex items-center justify-center rounded-md text-white hover:bg-rose-600/20 border border-transparent hover:border-rose-600/30"
-                              >
-                                ×
-                              </button>
-                            </div>
+                            ) : null}
                           </div>
-                        ))}
-                      </div>
+                          <div className="ml-4 flex-shrink-0">
+                            <button
+                              onClick={() =>
+                                SetChosenProblems(
+                                  chosenProblems.filter(
+                                    (p) => p.id !== problem.id,
+                                  ),
+                                )
+                              }
+                              aria-label="Remove problem"
+                              className="w-8 h-8 flex items-center justify-center rounded-md text-white hover:bg-rose-600/20 border border-transparent hover:border-rose-600/30"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
           {/* Submit button */}
-          <div className="mx-auto mt-8 max-w-md">
-            <div className="flex justify-center">
+          <div className="mx-auto mt-8 max-w-full ">
+            <div className="flex justify-end">
               <Buttonv2
                 text="Create Contest"
                 ApiCall={async () => await createContest()}

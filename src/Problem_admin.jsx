@@ -258,7 +258,7 @@ export default function ProblemCreationForm() {
   }, [zip]);
 
   useEffect(() => {
-    UserAuth(setUser);
+    UserAuth(setUser, true);
   }, []);
   const [form, setForm] = useState({
     title: "",

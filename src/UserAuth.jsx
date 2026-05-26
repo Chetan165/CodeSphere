@@ -14,7 +14,7 @@ const redirectAfterToast = (path) => {
   }, 1000);
 };
 
-const UserAuth = async (setUser) => {
+const UserAuth = async (setUser, AdminCheck = false) => {
   try {
     const response = await fetch(`${backendURL}/api/user`, {
       method: "GET",
@@ -25,6 +25,12 @@ const UserAuth = async (setUser) => {
 
     if (response.ok) {
       if (body && body.uid) {
+        if (AdminCheck && body.admin !== true) {
+          showAuthToast("Admin access required", "auth-admin-required");
+          redirectAfterToast("/dashboard");
+          return { ok: false, reason: "admin_required", data: body };
+        }
+
         setUser(body);
         localStorage.setItem("CodeSphereUserData", JSON.stringify(body));
         return { ok: true, data: body };

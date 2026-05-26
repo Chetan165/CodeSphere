@@ -6,6 +6,7 @@ import { Label } from "./component/ui/label";
 import { Input } from "./component/ui/input";
 import Buttonv2 from "./component/ui/Buttonv2";
 import { Button as StatefulButton } from "./component/ui/stateful-button";
+import SubmissionCodePortal from "./component/ui/SubmissionCodePortal";
 import { cn } from "./utils/cn";
 const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 const LEADERBOARD_PAGE_SIZE = 10;
@@ -43,6 +44,8 @@ export default function ContestEdit() {
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState("");
 
+  const [selectedCode, setSelectedCode] = useState(null);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -63,7 +66,7 @@ export default function ContestEdit() {
   };
 
   useEffect(() => {
-    UserAuth(setUser);
+    UserAuth(setUser, true);
   }, []);
 
   // Fetch contest details (uses same API as contest page)
@@ -211,6 +214,30 @@ export default function ContestEdit() {
     return items;
   })();
 
+  const leaderboardProblemColumns = leaderboard.reduce((acc, row) => {
+    (row?.problemScores || []).forEach((problem) => {
+      const id =
+        problem?.problemId ||
+        problem?.problemTitle ||
+        `problem-${acc.length + 1}`;
+      if (!acc.some((item) => item.id === id)) {
+        acc.push({
+          id,
+          title: problem?.problemTitle || problem?.problemId || "Problem",
+          maxScore: problem?.maxScore,
+        });
+      }
+    });
+    return acc;
+  }, []);
+
+  const formatDateTime = (value) => {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleString();
+  };
+
   useEffect(() => {
     if (activeTab === "leaderboard") {
       fetchLeaderboard(leaderboardOffset, LEADERBOARD_PAGE_SIZE);
@@ -286,11 +313,22 @@ export default function ContestEdit() {
 
   return user && user.uid ? (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_28%),linear-gradient(180deg,#050505_0%,#09090b_45%,#020202_100%)] px-4 py-6 sm:px-6 lg:px-8 text-slate-200">
+      <SubmissionCodePortal
+        open={!!selectedCode}
+        onOpenChange={(open) => {
+          if (!open) setSelectedCode(null);
+        }}
+        title={selectedCode?.title || "Submitted code"}
+        language={selectedCode?.language || ""}
+        submittedAt={
+          selectedCode?.submittedAt
+            ? formatDateTime(selectedCode.submittedAt)
+            : ""
+        }
+        code={selectedCode?.code || ""}
+      />
       <div className="mx-auto w-full max-w-7xl space-y-6">
         <header className="rounded-3xl border border-white/10 bg-white/5 px-6 py-6 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-8">
-          <p className="text-xs uppercase tracking-[0.25em] text-cyan-300/80">
-            Contest admin
-          </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
             Edit Contest
           </h1>
@@ -507,20 +545,30 @@ export default function ContestEdit() {
               <p className="text-slate-400">No leaderboard data available.</p>
             ) : (
               <div className="space-y-4">
-                <div className="overflow-x-auto rounded-2xl border border-white/10 bg-zinc-900/80 shadow-[0_14px_34px_rgba(0,0,0,0.38)] backdrop-blur-sm">
-                  <table className="min-w-full divide-y divide-white/10 text-sm">
+                <div className="max-h-[62vh] overflow-auto rounded-2xl border border-white/10 bg-zinc-900/80 shadow-[0_14px_34px_rgba(0,0,0,0.38)] backdrop-blur-sm">
+                  <table className="min-w-[1100px] divide-y divide-white/10 text-sm">
                     <thead className="bg-zinc-900/92 text-slate-300 uppercase tracking-wide text-xs">
                       <tr>
                         <th className="px-4 py-3 text-left">Rank</th>
-                        <th className="px-4 py-3 text-left">UID</th>
+                        <th className="px-4 py-3 text-left">User ID</th>
                         <th className="px-4 py-3 text-left">Name</th>
                         <th className="px-4 py-3 text-left">Roll No</th>
                         <th className="px-4 py-3 text-left">Branch</th>
                         <th className="px-4 py-3 text-left">Total Score</th>
-                        <th className="px-4 py-3 text-left">Problems Solved</th>
-                        <th className="px-4 py-3 text-left">
-                          Attempted Problems
-                        </th>
+                        <th className="px-4 py-3 text-left">Last Submission</th>
+                        {leaderboardProblemColumns.map((problemColumn) => (
+                          <th
+                            key={problemColumn.id}
+                            className="px-4 py-3 text-left min-w-[180px]"
+                          >
+                            {problemColumn.title}
+                            {typeof problemColumn.maxScore === "number" ? (
+                              <span className="ml-1 text-slate-500 normal-case tracking-normal">
+                                / {problemColumn.maxScore}
+                              </span>
+                            ) : null}
+                          </th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10 bg-white/[0.02] text-slate-100">
@@ -537,12 +585,66 @@ export default function ContestEdit() {
                           <td className="px-4 py-3">{row?.rollNo ?? "-"}</td>
                           <td className="px-4 py-3">{row?.branch ?? "-"}</td>
                           <td className="px-4 py-3">{row?.totalScore ?? 0}</td>
-                          <td className="px-4 py-3">
-                            {row?.problemsSolved ?? 0}
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            {formatDateTime(row?.lastSubmittedAt)}
                           </td>
-                          <td className="px-4 py-3">
-                            {row?.attemptedProblems ?? 0}
-                          </td>
+                          {leaderboardProblemColumns.map((problemColumn) => {
+                            const score = (row?.problemScores || []).find(
+                              (problem) =>
+                                (problem?.problemId ||
+                                  problem?.problemTitle) === problemColumn.id,
+                            );
+                            const cellKey = `${row?.userId || row?.uid || index}-${problemColumn.id}`;
+                            return (
+                              <td
+                                key={cellKey}
+                                className="px-4 py-3 align-top max-w-[280px]"
+                              >
+                                {score ? (
+                                  <div className="flex flex-col leading-tight">
+                                    <div className="flex items-center gap-3">
+                                      <span className="font-medium">
+                                        {score?.marks ?? 0}
+                                        {typeof score?.maxScore === "number"
+                                          ? ` / ${score.maxScore}`
+                                          : ""}
+                                      </span>
+                                      <span className="text-xs text-slate-400">
+                                        {score?.verdict || "-"}
+                                      </span>
+                                    </div>
+                                    <div className="text-xs text-slate-400 mt-1">
+                                      {score?.language || "-"}
+                                    </div>
+                                    {score?.code ? (
+                                      <div className="mt-2">
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setSelectedCode({
+                                              title:
+                                                problemColumn?.title ||
+                                                score?.problemTitle ||
+                                                "Submitted code",
+                                              language: score?.language || "",
+                                              submittedAt:
+                                                score?.submittedAt || "",
+                                              code: score.code,
+                                            })
+                                          }
+                                          className="text-xs text-sky-300 hover:underline"
+                                        >
+                                          Show code
+                                        </button>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                            );
+                          })}
                         </tr>
                       ))}
                     </tbody>

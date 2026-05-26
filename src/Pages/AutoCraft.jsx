@@ -8,6 +8,7 @@ import AILoader from "../component/elements/AILoader";
 import { HoverEffect } from "../component/ui/card-hover-effect";
 import { CodeBlock } from "../component/ui/code-block";
 import { MultiStepLoader } from "./MultiStepLoader";
+import UserAuth from "../UserAuth";
 const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
 
 const loadingStates = [
@@ -54,6 +55,7 @@ const steps = [
 ];
 
 const AutoCraft = () => {
+  const [user, setUser] = useState();
   const [currentStep, setCurrentStep] = useState(0);
   const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
@@ -67,6 +69,10 @@ const AutoCraft = () => {
   const [questionStyle, setQuestionStyle] = useState("LeetCode");
   const [additionalContext, setAdditionalContext] = useState("");
   const isBusy = loading || buttonLoading;
+
+  useEffect(() => {
+    UserAuth(setUser, true);
+  }, []);
 
   const DownloadFile = async () => {
     try {
@@ -193,7 +199,7 @@ const AutoCraft = () => {
     console.log(selectedTags, difficulty, complexity, questionStyle);
   }, [selectedTags, difficulty, complexity, questionStyle]);
 
-  return (
+  return user && user.uid ? (
     <div className="min-h-screen w-full bg-black text-white flex flex-col px-2 md:px-8 py-0">
       {/* Timeline/Stepper */}
       {currentStep === 2 ? (
@@ -482,7 +488,7 @@ const AutoCraft = () => {
         }
       `}</style>
     </div>
-  );
+  ) : null;
 };
 
 export default AutoCraft;
