@@ -66,7 +66,7 @@ export function SidebarDemo({ children }) {
     },
   ];
   const [open, setOpen] = useState(false);
-  const userData = User; // use the fetched user instead of localStorage
+  const userData = User;
   if (userData && userData.admin) {
     links = [
       ...links,
@@ -173,7 +173,11 @@ export const Logo = ({ open }) => {
       to="/"
       className="relative z-20 flex items-center gap-2 overflow-hidden py-1 text-sm font-normal text-black dark:text-white"
     >
-      <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-black dark:bg-white" />
+      <img
+        src="../../public/code.png"
+        alt="Logo"
+        className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm "
+      />
       <span
         className={cn(
           "font-medium whitespace-pre transition-all duration-150",

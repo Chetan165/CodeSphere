@@ -31,7 +31,7 @@ export default function Register() {
     "M&ME",
   ];
   const sections = ["A", "B", "C", "NA"];
-  const years = ["21", "22", "23", "24", "25"];
+  const years = ["21", "22", "23", "24", "25", "26"];
 
   useEffect(() => {
     const { yearStart, branch, section, roll } = formData;
@@ -150,10 +150,16 @@ export default function Register() {
       >
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs uppercase tracking-[0.3em] text-slate-400">Setup</div>
-            <h2 className="mt-1 text-2xl font-semibold text-white">User Registration</h2>
+            <div className="text-xs uppercase tracking-[0.3em] text-slate-400">
+              Setup
+            </div>
+            <h2 className="mt-1 text-2xl font-semibold text-white">
+              User Registration
+            </h2>
           </div>
-          <div className="rounded-full border border-white/10 bg-zinc-950/60 px-3 py-1 text-xs font-medium text-slate-300">Profile</div>
+          <div className="rounded-full border border-white/10 bg-zinc-950/60 px-3 py-1 text-xs font-medium text-slate-300">
+            Profile
+          </div>
         </div>
 
         <input

@@ -15,6 +15,7 @@ import AutoCraft from "./Pages/AutoCraft.jsx";
 import ContestChallenges from "./ContestChallenges.jsx";
 import SolvePage from "./SolvePage.jsx";
 import { SidebarDemo } from "./Pages/Sidebar.jsx";
+import Profile from "./Pages/Profile.jsx";
 import NoPage from "./Pages/NoPage.jsx";
 
 const router = createBrowserRouter([
@@ -45,6 +46,10 @@ const router = createBrowserRouter([
       {
         path: "dashboard",
         element: <Dashboard />,
+      },
+      {
+        path: "Profile",
+        element: <Profile />,
       },
       {
         path: "sample",

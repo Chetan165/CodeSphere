@@ -61,12 +61,12 @@ const AutoCraft = () => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [difficulty, setDifficulty] = useState("Easy");
   const [complexity, _setComplexity] = useState(null);
+  const [apiKey, setApiKey] = useState("");
   const [Step1Data, SetStep1Data] = useState(null);
   const [Step2Data, SetStep2Data] = useState(null);
   const [loading, setloading] = useState(false);
   const [done, setDone] = useState(false);
   const [buttonLoading, setButtonLoading] = useState(false);
-  const [questionStyle, setQuestionStyle] = useState("LeetCode");
   const [additionalContext, setAdditionalContext] = useState("");
   const isBusy = loading || buttonLoading;
 
@@ -74,12 +74,18 @@ const AutoCraft = () => {
     UserAuth(setUser, true);
   }, []);
 
+  const buildAutocraftBody = (payload = {}) => ({
+    API_KEY: apiKey,
+    ...payload,
+  });
+
   const DownloadFile = async () => {
     try {
       const data = await fetch(
         `${backendURL}/admin/Download/${localStorage.getItem("UserSession")}`,
         {
           method: "GET",
+          credentials: "include",
         },
       );
       const blob = await data.blob();
@@ -105,10 +111,13 @@ const AutoCraft = () => {
         `${backendURL}/admin/routeCE/pipeline/${localStorage.getItem("UserSession")}`,
         {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jobid: localStorage.getItem("UserSession"),
-          }),
+          body: JSON.stringify(
+            buildAutocraftBody({
+              jobid: localStorage.getItem("UserSession"),
+            }),
+          ),
         },
       );
       if (!res.ok) throw new Error("CE Pipeline failed");
@@ -134,13 +143,14 @@ const AutoCraft = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          tags: selectedTags,
-          difficulty: difficulty,
-          expectedComplexity: complexity,
-          questionStyle: questionStyle,
-          additionalContext: additionalContext,
-        }),
+        body: JSON.stringify(
+          buildAutocraftBody({
+            tags: selectedTags,
+            difficulty: difficulty,
+            expectedComplexity: complexity,
+            additionalContext: additionalContext,
+          }),
+        ),
       });
       if (!data.ok) throw new Error("Failed to generate problem");
       const parsedres = await data.json();
@@ -162,9 +172,11 @@ const AutoCraft = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-          sessionId: localStorage.getItem("UserSession"),
-        }),
+        body: JSON.stringify(
+          buildAutocraftBody({
+            sessionId: localStorage.getItem("UserSession"),
+          }),
+        ),
       });
       if (!data.ok) throw new Error("Failed to generate testcases");
       const parsedres = await data.json();
@@ -196,8 +208,8 @@ const AutoCraft = () => {
     }
   }, []);
   useEffect(() => {
-    console.log(selectedTags, difficulty, complexity, questionStyle);
-  }, [selectedTags, difficulty, complexity, questionStyle]);
+    console.log(selectedTags, difficulty, complexity);
+  }, [selectedTags, difficulty, complexity]);
 
   return user && user.uid ? (
     <div className="min-h-screen w-full bg-black text-white flex flex-col px-2 md:px-8 py-0">
@@ -282,24 +294,20 @@ const AutoCraft = () => {
               {/* input fields for parameters */}
               <div className="mt-5 mb-3">
                 <label className="block mt-2 text-sm text-slate-400">
-                  Question Style
+                  Gemini API Key
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    className="mt-2 w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
+                    placeholder="Paste your Gemini API key"
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
                 </label>
-                <select
-                  id="QuestionStyle"
-                  value={questionStyle}
-                  onChange={(e) => setQuestionStyle(e.target.value)}
-                  className="w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="LeetCode" className="text-white">
-                    LeetCode
-                  </option>
-                  <option
-                    value="Competitive Programming"
-                    className="text-white"
-                  >
-                    Codeforces/CodeChef
-                  </option>
-                </select>
+              </div>
+
+              <div className="mt-5 mb-3">
                 <div className="mt-5 mb-3">
                   <label className="block mt-2 text-sm text-slate-400">
                     Additional Context (Optional)
