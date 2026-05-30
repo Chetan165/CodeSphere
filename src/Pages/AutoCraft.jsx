@@ -55,19 +55,19 @@ const steps = [
 ];
 
 const AutoCraft = () => {
+  const [ValidSolution, setValidSolution] = useState(null);
   const [user, setUser] = useState();
   const [currentStep, setCurrentStep] = useState(0);
   const [tags, setTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [difficulty, setDifficulty] = useState("Easy");
-  const [complexity, _setComplexity] = useState(null);
   const [apiKey, setApiKey] = useState("");
   const [Step1Data, SetStep1Data] = useState(null);
   const [Step2Data, SetStep2Data] = useState(null);
   const [loading, setloading] = useState(false);
   const [done, setDone] = useState(false);
   const [buttonLoading, setButtonLoading] = useState(false);
-  const [additionalContext, setAdditionalContext] = useState("");
+  const [additionalContext, setAdditionalContext] = useState(null);
   const isBusy = loading || buttonLoading;
 
   useEffect(() => {
@@ -147,7 +147,7 @@ const AutoCraft = () => {
           buildAutocraftBody({
             tags: selectedTags,
             difficulty: difficulty,
-            expectedComplexity: complexity,
+            ValidSolution: ValidSolution,
             additionalContext: additionalContext,
           }),
         ),
@@ -208,8 +208,8 @@ const AutoCraft = () => {
     }
   }, []);
   useEffect(() => {
-    console.log(selectedTags, difficulty, complexity);
-  }, [selectedTags, difficulty, complexity]);
+    console.log(selectedTags, difficulty);
+  }, [selectedTags, difficulty]);
 
   return user && user.uid ? (
     <div className="min-h-screen w-full bg-black text-white flex flex-col px-2 md:px-8 py-0">
@@ -313,6 +313,17 @@ const AutoCraft = () => {
                     Additional Context (Optional)
                     <textarea
                       onChange={(e) => setAdditionalContext(e.target.value)}
+                      className="w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
+                    ></textarea>
+                  </label>
+                </div>
+              </div>
+              <div className="mt-5 mb-3">
+                <div className="mt-5 mb-3">
+                  <label className="block mt-2 text-sm text-slate-400">
+                    Solution(Optional, helps AI generate better testcases)
+                    <textarea
+                      onChange={(e) => setValidSolution(e.target.value)}
                       className="w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
                     ></textarea>
                   </label>
