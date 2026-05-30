@@ -33,7 +33,7 @@ export default function Profile() {
     : "border-emerald-400/30 bg-emerald-400/10 text-emerald-200";
 
   const detailRows = [
-    { label: "Full Name", value: user?.displayName || "Unknown user" },
+    { label: "Display Name", value: user?.displayName || "Unknown user" },
     { label: "UID", value: user?.uid || "-" },
     { label: "Authorization Status", value: authorizationStatus },
     {

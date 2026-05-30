@@ -305,29 +305,22 @@ const AutoCraft = () => {
                     spellCheck={false}
                   />
                 </label>
-              </div>
 
-              <div className="mt-5 mb-3">
-                <div className="mt-5 mb-3">
-                  <label className="block mt-2 text-sm text-slate-400">
-                    Additional Context (Optional)
-                    <textarea
-                      onChange={(e) => setAdditionalContext(e.target.value)}
-                      className="w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
-                    ></textarea>
-                  </label>
-                </div>
-              </div>
-              <div className="mt-5 mb-3">
-                <div className="mt-5 mb-3">
-                  <label className="block mt-2 text-sm text-slate-400">
-                    Solution(Optional, helps AI generate better testcases)
-                    <textarea
-                      onChange={(e) => setValidSolution(e.target.value)}
-                      className="w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
-                    ></textarea>
-                  </label>
-                </div>
+                <label className="block mt-2 text-sm text-slate-400">
+                  Additional Context (Optional)
+                  <textarea
+                    onChange={(e) => setAdditionalContext(e.target.value)}
+                    className="min-h-[100px] w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
+                  ></textarea>
+                </label>
+
+                <label className="block mt-2 text-sm text-slate-400">
+                  Solution(Optional, helps AI generate better testcases)
+                  <textarea
+                    onChange={(e) => setValidSolution(e.target.value)}
+                    className="min-h-[100px] w-full rounded-md bg-neutral-800 border border-blue-600/40 text-white p-2 focus:ring-2 focus:ring-blue-400"
+                  ></textarea>
+                </label>
               </div>
               <Buttonv2
                 ApiCall={SendData}
