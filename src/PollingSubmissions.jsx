@@ -1,7 +1,8 @@
 const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
 const pollJudge0 = async (submissionId) => {
   let attempts = 0;
-  const maxAttempts = 10;
+  const maxAttempts = 20;
   const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
   while (attempts < maxAttempts) {
@@ -18,9 +19,16 @@ const pollJudge0 = async (submissionId) => {
       throw new Error(data?.message || "Failed to poll submission");
     }
 
-    if (data.status !== "pending") return data;
+    // THE FIX: Only return the data if it has completely finished
+    if (
+      data.status !== "pending" &&
+      data.status !== "queued" &&
+      data.status !== "processing"
+    ) {
+      return data;
+    }
 
-    await delay(2000);
+    await delay(3000);
     attempts++;
   }
 
@@ -46,9 +54,16 @@ const pollRun = async (runId) => {
       throw new Error(data?.message || "Failed to poll run");
     }
 
-    if (data.status !== "pending") return data;
+    // THE FIX: Recognize all intermediate backend states
+    if (
+      data.status !== "pending" &&
+      data.status !== "queued" &&
+      data.status !== "processing"
+    ) {
+      return data;
+    }
 
-    await delay(1000);
+    await delay(1500);
     attempts++;
   }
 
