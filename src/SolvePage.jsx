@@ -328,7 +328,7 @@ public class Main {
 
       const result = await res.json();
       if (!res.ok || result?.ok === false) {
-        throw new Error(result?.message || "Submission failed");
+        throw new Error(result["error"] || "Submission failed");
       }
 
       const submissionId =
@@ -489,7 +489,7 @@ public class Main {
 
       const data = await res.json();
       if (!res.ok || data?.ok === false) {
-        throw new Error(data?.message || "Run failed");
+        throw new Error(data["error"] || "Run failed");
       }
 
       const runId = data?.runId;
