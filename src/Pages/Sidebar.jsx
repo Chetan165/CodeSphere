@@ -174,7 +174,7 @@ export const Logo = ({ open }) => {
       className="relative z-20 flex items-center gap-2 overflow-hidden py-1 text-sm font-normal text-black dark:text-white"
     >
       <img
-        src="../../code.png"
+        src="/code.png"
         alt="Logo"
         className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm "
       />
