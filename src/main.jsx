@@ -6,6 +6,8 @@ import Register from "./Register.jsx";
 import Sample from "./Pages/Sample.jsx";
 import "./index.css";
 import App from "./App.jsx";
+import Login from "./Login.jsx";
+import Signup from "./Signup.jsx";
 import Dashboard from "./Dashboard.jsx";
 import ProblemCreationForm from "./Problem_admin.jsx";
 import Contest from "./Contest.jsx";
@@ -30,6 +32,14 @@ const router = createBrowserRouter([
   {
     path: "/register",
     element: <Register />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
   },
   {
     path: "/",

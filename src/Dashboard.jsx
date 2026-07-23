@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
-import App from "./App.jsx";
 import Logout from "./Logout.jsx";
-import Contest_button from "./Contest_button.jsx";
 import UserAuth from "./UserAuth.jsx";
 import { EncryptedText } from "./component/ui/encrypted-text.jsx";
 export default function Dashboard() {
   const [User, setUser] = useState();
+  const displayName = User?.name || User?.displayName || "Guest";
+  const avatarUrl = User?.photos?.[0]?.value || null;
+  const avatarFallback = displayName?.charAt(0)?.toUpperCase() || "G";
+
   useEffect(() => {
     UserAuth(setUser);
   }, []);
@@ -25,7 +27,7 @@ export default function Dashboard() {
             <div className="flex w-full items-center gap-4">
               <div className="min-w-0 flex-1">
                 <EncryptedText
-                  text={`Welcome, ${User?.displayName || "Guest"}`}
+                  text={`Welcome, ${displayName}`}
                   encryptedClassName="text-neutral-500 text-3xl font-semibold"
                   revealedClassName="dark:text-white text-white text-3xl font-semibold"
                   revealDelayMs={50}
@@ -33,10 +35,16 @@ export default function Dashboard() {
                 />
               </div>
 
-              <img
-                src={`${User?.photos[0].value}`}
-                className="h-16 w-16 shrink-0 rounded-2xl border border-white/10 object-cover shadow-lg"
-              />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  className="h-16 w-16 shrink-0 rounded-2xl border border-white/10 object-cover shadow-lg"
+                />
+              ) : (
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-xl font-semibold text-white shadow-lg">
+                  {avatarFallback}
+                </div>
+              )}
             </div>
           </div>
         </header>

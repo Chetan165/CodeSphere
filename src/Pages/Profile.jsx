@@ -33,7 +33,7 @@ export default function Profile() {
     : "border-emerald-400/30 bg-emerald-400/10 text-emerald-200";
 
   const detailRows = [
-    { label: "Display Name", value: user?.displayName || "Unknown user" },
+    { label: "Display Name", value: user?.name || "Unknown user" },
     { label: "UID", value: user?.uid || "-" },
     { label: "Authorization Status", value: authorizationStatus },
     {
@@ -81,7 +81,7 @@ export default function Profile() {
                   />
                 ) : (
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-zinc-950/70 text-lg font-semibold text-slate-300">
-                    {user?.displayName?.slice(0, 1)?.toUpperCase() || "U"}
+                    {user?.name?.slice(0, 1)?.toUpperCase() || "U"}
                   </div>
                 )}
 
@@ -90,7 +90,7 @@ export default function Profile() {
                     Signed in as
                   </div>
                   <h2 className="mt-1 text-2xl font-semibold text-white">
-                    {user?.displayName || "Unknown user"}
+                    {user?.name || "Unknown user"}
                   </h2>
                 </div>
               </div>
