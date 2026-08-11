@@ -6,6 +6,7 @@ import Register from "./Register.jsx";
 import Sample from "./Pages/Sample.jsx";
 import "./index.css";
 import App from "./App.jsx";
+if (typeof document !== "undefined") document.documentElement.classList.add("dark");
 import Dashboard from "./Dashboard.jsx";
 import ProblemCreationForm from "./Problem_admin.jsx";
 import Contest from "./Contest.jsx";
@@ -102,3 +103,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     />
   </StrictMode>,
 );
+
