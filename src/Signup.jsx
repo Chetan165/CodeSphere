@@ -16,11 +16,33 @@ export default function Signup() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    id: "",
     name: "",
     email: "",
-    password: "",
+    branch: "COMP",
+    section: "A",
+    rollNo: "",
+    year: "23",
   });
+
+  const branches = [
+    "COMP",
+    "IT",
+    "AI&ML",
+    "AI&DS",
+    "CS&E",
+    "E&CS",
+    "E&TC",
+    "CIVIL",
+    "MECH",
+    "IoT",
+    "M&ME",
+  ];
+  const sections = ["A", "B", "C", "NA"];
+  const years = ["21", "22", "23", "24", "25", "26"];
+
+  const graduationYear = (parseInt(formData.year, 10) + 4).toString().slice(-2);
+  const sectionPart = formData.section !== "NA" ? formData.section : "";
+  const generatedUid = `${formData.year}-${formData.branch}${sectionPart}${formData.rollNo || ""}-${graduationYear}`;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,10 +60,12 @@ export default function Signup() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
-          id: formData.id.trim(),
+          id: generatedUid,
           name: formData.name.trim(),
           email: formData.email.trim(),
-          password: formData.password,
+          rollNo: formData.rollNo.trim(),
+          branch: formData.branch,
+          year: formData.year,
         }),
       });
 
@@ -95,19 +119,6 @@ export default function Signup() {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm text-slate-400">UID</label>
-          <input
-            type="text"
-            name="id"
-            placeholder="Choose your UID"
-            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 placeholder:text-zinc-500 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10"
-            value={formData.id}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
           <label className="text-sm text-slate-400">Name</label>
           <input
             type="text"
@@ -121,6 +132,73 @@ export default function Signup() {
         </div>
 
         <div className="space-y-2">
+          <label className="text-sm text-slate-400">Branch and Section</label>
+          <div className="grid grid-cols-2 gap-3">
+            <select
+              name="branch"
+              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10"
+              value={formData.branch}
+              onChange={handleChange}
+              required
+            >
+              {branches.map((branch) => (
+                <option key={branch} value={branch}>
+                  {branch}
+                </option>
+              ))}
+            </select>
+
+            <select
+              name="section"
+              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10"
+              value={formData.section}
+              onChange={handleChange}
+            >
+              {sections.map((section) => (
+                <option key={section} value={section}>
+                  {section}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm text-slate-400">Roll Number</label>
+          <input
+            type="text"
+            name="rollNo"
+            placeholder="Roll Number (e.g. 48)"
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 placeholder:text-zinc-500 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10"
+            value={formData.rollNo}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm text-slate-400">Year of Admission</label>
+          <select
+            name="year"
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10"
+            value={formData.year}
+            onChange={handleChange}
+            required
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-1 rounded-2xl border border-white/10 bg-zinc-950/40 px-4 py-3">
+          <div className="text-xs uppercase tracking-[0.2em] text-slate-500">Auto UID</div>
+          <div className="font-mono text-sm text-slate-100">{generatedUid}</div>
+        </div>
+
+        <div className="space-y-2">
           <label className="text-sm text-slate-400">Email</label>
           <input
             type="email"
@@ -128,19 +206,6 @@ export default function Signup() {
             placeholder="you@example.com"
             className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 placeholder:text-zinc-500 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10"
             value={formData.email}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400">Password</label>
-          <input
-            type="password"
-            name="password"
-            placeholder="Create a password"
-            className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/50 px-4 py-3 text-slate-100 placeholder:text-zinc-500 outline-none transition focus:border-white/10 focus:ring-2 focus:ring-white/10"
-            value={formData.password}
             onChange={handleChange}
             required
           />
